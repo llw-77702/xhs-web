@@ -175,7 +175,7 @@ if(p.token){
 fetch('http://localhost:5001/api/note_info',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({noteId:p.id,xsecToken:p.token})})
 .then(function(r){return r.json()})
 .then(function(res){
-var e=document.getElementById('rd_'+p.id);if(e&&res.success&&res.data){e.innerHTML='👤 '+res.data.nickname+' | 🕐 '+fmtTime(res.data.time);_results[_results.length-1].nickname=res.data.nickname}})}})
+var e=document.getElementById('rd_'+p.id);if(e&&res.success&&res.data){e.innerHTML='👤 '+res.data.nickname+' | 🕐 '+fmtTime(res.data.time);_results[_results.length-1].nickname=res.data.nickname;_results[_results.length-1].time=fmtTime(res.data.time)}})}})
 stats.innerHTML='<div class=\"stats-grid\"><div class=\"stat-item\"><div class=\"stat-value\">'+ok+'</div><div class=\"stat-label\">✅ 成功</div></div><div class=\"stat-item\"><div class=\"stat-value\">'+fail+'</div><div class=\"stat-label\">❌ 失败</div></div><div class=\"stat-item\"><div class=\"stat-value\">'+_results.length+'</div><div class=\"stat-label\">📊 总计</div></div></div>'
 }
 
@@ -184,7 +184,7 @@ function fmtTime(t){if(!t)return'未知';if(typeof t=='string'&&t.includes('-'))
 window.copyAllIds=function(){var ids=_results.map(function(r){return r.id}).join('\n');if(!ids)return alert('无结果');var ta=document.createElement('textarea');ta.value=ids;document.body.appendChild(ta);ta.select();document.execCommand('copy');document.body.removeChild(ta);alert('✅ 已复制 '+_results.length+' 个ID')}
 
 window.exportResults=function(){if(!_results.length)return alert('无结果')
-var data=[['笔记ID','达人名称','来源链接']];_results.forEach(function(r){data.push([r.id||'',r.nickname||'',r.src||''])})
+var data=[['笔记ID','达人名称','发布时间','来源链接']];_results.forEach(function(r){data.push([r.id||'',r.nickname||'',r.time||'',r.src||''])})
 var wb=XLSX.utils.book_new();var ws=XLSX.utils.aoa_to_sheet(data);XLSX.utils.book_append_sheet(wb,ws,'结果')
 XLSX.writeFile(wb,'xhs_results_'+Date.now()+'.xlsx');alert('✅ 已导出 '+_results.length+' 条结果到 Excel')}
 
