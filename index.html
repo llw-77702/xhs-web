@@ -322,7 +322,13 @@ var cookie=document.getElementById('cookieInput').value.trim()
 if(!cookie||!cookie.includes('ares.beaker.session.id'))return alert('❌ Cookie 格式不正确，需要包含 ares.beaker.session.id')
 localStorage.setItem('xhs_cookie',cookie)
 savedCookie=cookie
-alert('✅ Cookie 已保存到本地浏览器')
+// 同时保存到服务器数据库
+fetch(window.location.origin+'/api/manual_cookie',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({cookie:cookie})})
+.then(function(r){return r.json()}).then(function(res){
+if(res.success){console.log('Cookie synced to server')}
+else{console.warn('Server sync failed:',res.error)}
+}).catch(function(){console.warn('Server not reachable, cookie saved locally only')})
+alert('✅ Cookie 已保存')
 checkCookie()
 closeCookieModal()
 }
