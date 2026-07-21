@@ -10,7 +10,15 @@ import httpx
 from flask import Flask, render_template, request, jsonify
 import pymysql
 
-app = Flask(__name__, static_folder="static", template_folder="templates")
+app = Flask(__name__)
+
+# CORS 支持（允许 GitHub Pages 跨域调用）
+@app.after_request
+def add_cors(response):
+    response.headers["Access-Control-Allow-Origin"] = "*"
+    response.headers["Access-Control-Allow-Headers"] = "Content-Type"
+    response.headers["Access-Control-Allow-Methods"] = "GET, POST, OPTIONS"
+    return response
 
 # ========== 配置（优先读取环境变量，fallback 用默认值） ==========
 DB_CONFIG = {

@@ -80,6 +80,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Inter','Segoe UI',sans-serif;
 <div class="actions">
 <span class="hint" id="idCount">已输入 0 个ID</span>
 <label class="file-upload">📁 导入文件<input type="file" id="idFileInput" accept=".txt,.csv,.xlsx"></label>
+<button class="btn btn-secondary btn-sm" onclick="dlIdTemplate()">📄 下载模版</button>
 <button class="btn btn-primary btn-sm" onclick="batchConvert()">🔄 批量转换</button>
 </div>
 <p class="info">💡 需要启动本地服务（localhost:5001），否则请使用「广告平台脚本」方式</p>
@@ -171,6 +172,7 @@ function dlTemplate(){
 var data=[['笔记ID','链接'],['在此粘贴ID','或在此粘贴链接'],['69fd8382000000003701f115','https://www.xiaohongshu.com/explore/69fd8382000000003701f115?xsec_token=xxx']]
 var wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(data),'模版')
 XLSX.writeFile(wb,'xhs_upload_template.xlsx')}
+function dlIdTemplate(){dlTemplate()}
 
 // ==== URL解析 ====
 function parse(s){
