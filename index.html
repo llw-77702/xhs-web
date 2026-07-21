@@ -164,16 +164,26 @@ var f=e.target.files[0];if(!f)return;readFile(f,function(ids){if(!ids.length)ret
 document.getElementById('input').value=ids.join('\n');document.getElementById('count').textContent='已输入 '+ids.length+' 条';alert('✅ 导入 '+ids.length+' 条')})})
 
 // 检测本地服务
-setTimeout(function(){
-fetch('http://localhost:5001/',{mode:'no-cors'}).then(function(){
-localStorage.setItem('xhs_server','ok')
-var btn=document.querySelector('#sub1 .btn-primary');btn.disabled=false;btn.style.opacity='1';btn.textContent='🔄 批量转换'
-var info=document.querySelector('#sub1 .info');if(info)info.innerHTML='🟢 本地服务已连接'
-}).catch(function(){
-localStorage.removeItem('xhs_server')
-var btn=document.querySelector('#sub1 .btn-primary');btn.disabled=true;btn.style.opacity='.5';btn.textContent='🔄 服务未连接'
-var info=document.querySelector('#sub1 .info');if(info)info.innerHTML='🔴 本地服务未运行，请使用「广告平台脚本」方式'
-})},1000)
+function checkServer(){
+// 方式1：看当前页面是不是在本地服务器上
+if(window.location.hostname==='localhost'||window.location.hostname==='127.0.0.1'||window.location.port==='5001'){
+enableLocal(true);return}
+// 方式2：尝试 fetch（某些浏览器允许 HTTPS→HTTP 到 localhost）
+fetch('http://localhost:5001/',{mode:'no-cors'}).then(function(){enableLocal(true)
+}).catch(function(){enableLocal(false)})}
+function enableLocal(ok){
+localStorage.setItem('xhs_server',ok?'ok':'no')
+var btn=document.querySelector('#sub1 .btn-primary')
+var info=document.querySelector('#sub1 .info')
+if(!btn)return
+if(ok){
+btn.disabled=false;btn.style.opacity='1';btn.textContent='🔄 批量转换'
+if(info)info.innerHTML='🟢 本地服务已连接'
+}else{
+btn.disabled=true;btn.style.opacity='.5';btn.textContent='🔄 本地未连接'
+if(info)info.innerHTML='🔴 本地服务未运行 → 请使用「<a href="#" onclick="st(2,document.querySelectorAll(\'.st\')[1]);return false" style="color:var(--accent)">🎭 广告平台脚本</a>」方式'
+}}
+checkServer()
 
 document.getElementById('idFileInput').addEventListener('change',function(e){
 var f=e.target.files[0];if(!f)return;readFile(f,function(ids){if(!ids.length)return alert('文件为空')
