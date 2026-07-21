@@ -45,6 +45,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Inter','Segoe UI',sans-serif;
 .script-box{background:#1a1a2e;color:#e94560;padding:12px;border-radius:8px;font-size:10px;font-family:Menlo,monospace;line-height:1.6;max-height:120px;overflow:auto;cursor:pointer;margin-bottom:8px}
 .footer{text-align:center;padding:20px;font-size:12px;color:var(--text3)}
 .info{font-size:12px;color:var(--text2);margin-top:6px}
+.file-upload{display:inline-block;padding:6px 12px;background:#f8f8fa;border:1px dashed var(--border);border-radius:8px;font-size:12px;color:var(--text2);cursor:pointer;transition:all .2s}
+.file-upload:hover{background:var(--border)}.file-upload input{display:none}
 .stats-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:12px}
 .stat-item{text-align:center;padding:12px;background:#f8f8fa;border-radius:8px}
 .stat-value{font-size:24px;font-weight:700}
@@ -70,40 +72,44 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Inter','Segoe UI',sans-serif;
 <!-- Tab 1: ID→链接 -->
 <div class="tab-content active" id="tab1">
 <section class="card">
-<div class="card-header"><h2>📝 输入笔记ID</h2><span class="hint">多个用逗号或换行分隔</span></div>
+<div class="card-header"><h2>📝 输入笔记ID</h2><span class="hint">支持粘贴 / 导入文件，多个用逗号或换行分隔</span></div>
 <div class="step-box">
 <b>①</b> 打开 <a href="https://ad.xiaohongshu.com/" target="_blank">ad.xiaohongshu.com</a> 登录<br>
 <b>②</b> 按 F12 → Console（控制台）<br>
 <b>③</b> 点下面代码框全选 → Ctrl+C 复制<br>
-<b>④</b> 控制台 Ctrl+V → 回车 → 弹窗操作
+<b>④</b> 控制台 Ctrl+V → 回车 → 弹窗中批量操作
 </div>
 <div class="script-box" onclick="sel(this)"></div>
+<p class="info">👆 代码框中的脚本支持批量：粘贴多个ID（逗号或换行分隔）→ 点转换 → 所有链接一键导出</p>
 </section>
 </div>
 
 <!-- Tab 2: 提取信息 -->
 <div class="tab-content" id="tab2">
 <section class="card">
-<div class="card-header"><h2>🔗 提取笔记信息</h2><span class="hint">粘贴链接自动提取</span></div>
-<textarea class="textarea" id="input" rows="4" placeholder="粘贴链接，多个用逗号或换行分隔&#10;https://www.xiaohongshu.com/explore/..."></textarea>
-<div style="display:flex;align-items:center;justify-content:space-between;margin-top:10px">
+<div class="card-header"><h2>🔗 批量提取笔记信息</h2><span class="hint">粘贴或导入文件批量提取</span></div>
+<textarea class="textarea" id="input" rows="5" placeholder="粘贴链接，多个用逗号或换行分隔&#10;https://www.xiaohongshu.com/explore/..."></textarea>
+<div style="display:flex;align-items:center;gap:8px;margin-top:10px;flex-wrap:wrap">
 <span class="hint" id="count">已输入 0 条</span>
-<button class="btn btn-primary btn-sm" onclick="run()">🔍 提取</button>
+<label class="file-upload">📁 导入文件<input type="file" id="fileInput" accept=".txt,.csv"></label>
+<button class="btn btn-primary btn-sm" onclick="run()">🔍 批量提取</button>
 </div>
-<div id="result" style="margin-top:12px"></div>
+</section>
+<section class="card" id="resultCard2" style="display:none">
+<div class="card-header"><h2>✅ 提取结果</h2>
+<div style="display:flex;gap:6px">
+<button class="btn btn-secondary btn-sm" onclick="copyAllIds()">📋 复制全部ID</button>
+<button class="btn btn-secondary btn-sm" onclick="exportResults()">📥 导出TXT</button>
+</div>
+</div>
+<div id="resultList2"></div>
+<div id="statsCard2"></div>
 </section>
 </div>
 
-<section class="card" id="resultCard" style="display:none">
-<div class="card-header"><h2>✅ 结果</h2>
-<div><button class="btn btn-secondary btn-sm" onclick="copyAll()">📋 复制全部</button></div>
-</div>
-<div id="resultList"></div>
-<div id="statsCard"></div>
-</section>
 </main>
 
-<footer class="footer"><p>仅供内部使用</p></footer>
+<footer class="footer"><p>仅供内部使用 · 支持批量导入.txt文件 · 批量导出结果</p></footer>
 </div>
 
 <script>
@@ -121,6 +127,20 @@ document.getElementById('resultCard').style.display='none'
 document.getElementById('input').addEventListener('input',function(){
 document.getElementById('count').textContent='已输入 '+this.value.split(/[,\n]+/).filter(function(x){return x.trim()}).length+' 条'})
 
+// 文件导入
+document.getElementById('fileInput').addEventListener('change',function(e){
+var f=e.target.files[0];if(!f)return;var reader=new FileReader();
+reader.onload=function(ev){
+var text=ev.target.result;
+var ids=text.split(/[,\n]+/).map(function(x){return x.trim()}).filter(Boolean);
+if(!ids.length){alert('文件为空');return}
+var el=document.getElementById('input');
+if(el.value.trim())ids.unshift(el.value.trim());
+el.value=ids.join('\n');
+document.getElementById('count').textContent='已输入 '+ids.length+' 条'
+alert('✅ 导入成功：'+ids.length+' 条')
+};reader.readAsText(f)})
+
 function parse(s){
 var id=null,t='';var m=s.match(/explore\/([a-f0-9]{24})/i);if(!m)m=s.match(/discovery\/item\/([a-f0-9]{24})/i)
 if(!m&&/^[a-f0-9]{24}$/i.test(s.trim()))id=s.trim()
@@ -132,23 +152,30 @@ window._results=[]
 function run(){
 var raw=document.getElementById('input').value;var items=raw.split(/[,\n]+/).map(function(x){return x.trim()}).filter(Boolean)
 if(!items.length)return alert('请输入链接')
-var list=document.getElementById('resultList'),card=document.getElementById('resultCard'),stats=document.getElementById('statsCard')
+var list=document.getElementById('resultList2'),card=document.getElementById('resultCard2'),stats=document.getElementById('statsCard2')
 _results=[];list.innerHTML='';card.style.display='';stats.innerHTML=''
-var pending=0
+var ok=0,fail=0
 items.forEach(function(s){
-var p=parse(s);if(!p){list.innerHTML+='<div class=\"result-item err\"><div style=\"font-size:18px\">❌</div><div class=\"result-content\"><div class=\"result-id\">无法识别</div></div></div>';return}
-_results.push({id:p.id})
-pending++
+var p=parse(s)
+if(!p){fail++;list.innerHTML+='<div class=\"result-item err\"><div style=\"font-size:18px\">❌</div><div class=\"result-content\"><div class=\"result-id\">无法识别</div></div></div>';return}
+ok++
+_results.push({id:p.id,src:s})
 var item=document.createElement('div');item.className='result-item ok';item.id='ri_'+p.id
-item.innerHTML='<div style=\"font-size:18px\">✅</div><div class=\"result-content\"><div class=\"result-id\">'+p.id+'</div><div style=\"font-size:12px;color:var(--text2)\" id=\"rd_'+p.id+'\">⏳ 加载达人信息...</div></div>'
+item.innerHTML='<div style=\"font-size:18px\">✅</div><div class=\"result-content\"><div class=\"result-id\">'+p.id+'</div><div style=\"font-size:12px;color:var(--text2)\" id=\"rd_'+p.id+'\"></div></div>'
 list.appendChild(item)
 if(p.token){
 fetch('http://localhost:5001/api/note_info',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({noteId:p.id,xsecToken:p.token})})
 .then(function(r){return r.json()})
-.then(function(res){pending--
-var e=document.getElementById('rd_'+p.id);if(e){
-if(res.success&&res.data){e.innerHTML='👤 '+res.data.nickname+' &nbsp;|&nbsp; 🕐 '+fmtTime(res.data.time);_results[_results.length-1].nickname=res.data.nickname}
-else e.innerHTML='⚠️ 详情加载失败（需启动本地服务）'}})}})}
+.then(function(res){
+var e=document.getElementById('rd_'+p.id);if(e&&res.success&&res.data){e.innerHTML='👤 '+res.data.nickname+' | 🕐 '+fmtTime(res.data.time);_results[_results.length-1].nickname=res.data.nickname}})}})
+stats.innerHTML='<div class=\"stats-grid\"><div class=\"stat-item\"><div class=\"stat-value\">'+ok+'</div><div class=\"stat-label\">✅ 成功</div></div><div class=\"stat-item\"><div class=\"stat-value\">'+fail+'</div><div class=\"stat-label\">❌ 失败</div></div><div class=\"stat-item\"><div class=\"stat-value\">'+_results.length+'</div><div class=\"stat-label\">📊 总计</div></div></div>'
+}
+
+function fmtTime(t){if(!t)return'未知';if(typeof t=='string'&&t.includes('-'))return t;var d=new Date(t);if(isNaN(d.getTime()))return t;return d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate()+' '+d.getHours()+':'+d.getMinutes()}
+
+window.copyAllIds=function(){var ids=_results.map(function(r){return r.id}).join('\n');if(!ids)return alert('无结果');var ta=document.createElement('textarea');ta.value=ids;document.body.appendChild(ta);ta.select();document.execCommand('copy');document.body.removeChild(ta);alert('✅ 已复制 '+_results.length+' 个ID')}
+
+window.exportResults=function(){if(!_results.length)return alert('无结果');var text=_results.map(function(r){return r.id+(r.nickname?' | '+r.nickname:'')+(r.src?' | '+r.src:'')}).join('\n');var a=document.createElement('a');a.href=URL.createObjectURL(new Blob([text],{type:'text/plain;charset=utf-8'}));a.download='xhs_results_'+Date.now()+'.txt';a.click();alert('✅ 已导出 '+_results.length+' 条结果')}
 
 function fmtTime(t){if(!t)return'未知';if(t.includes('-'))return t;var d=new Date(t);if(isNaN(d.getTime()))return t;return d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate()+' '+d.getHours()+':'+d.getMinutes()}
 
