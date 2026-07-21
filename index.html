@@ -134,18 +134,35 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Inter','Segoe UI',sans-serif;
 
 <!-- Cookie管理弹窗 -->
 <div id="cookieModal" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.4);z-index:9999;align-items:center;justify-content:center" onclick="if(event.target===this)closeCookieModal()">
-<div style="background:#fff;border-radius:14px;padding:24px;width:90%;max-width:480px;box-shadow:0 10px 40px rgba(0,0,0,.2)">
+<div style="background:#fff;border-radius:14px;padding:24px;width:90%;max-width:520px;box-shadow:0 10px 40px rgba(0,0,0,.2);max-height:85vh;overflow-y:auto">
 <h2 style="margin-bottom:12px">🔑 Cookie 管理</h2>
 <div style="background:#f8f8fa;padding:10px 14px;border-radius:8px;margin-bottom:14px">
 <div style="font-size:13px;color:var(--text2)">当前状态：<span id="modalCookieStatus" style="font-weight:600">⏳ 检测中...</span></div>
 </div>
-<p style="font-size:13px;color:var(--text2);margin-bottom:8px">从广告平台复制 Cookie 粘贴到下面：</p>
-<textarea id="cookieInput" style="width:100%;padding:10px;border:2px solid #ddd;border-radius:8px;font-size:13px;font-family:monospace;min-height:80px;resize:vertical" placeholder="从 ad.xiaohongshu.com 复制完整的 Cookie 粘贴到这里..."></textarea>
+
+<!-- 获取Cookie步骤 -->
+<div style="background:#f0f7ff;border:1px solid #c5d5f5;border-radius:8px;padding:14px;margin-bottom:14px">
+<div style="font-size:13px;font-weight:600;margin-bottom:8px;color:#1a5276">📖 如何获取Cookie</div>
+<div style="font-size:12px;color:#2c3e50;line-height:2">
+<b>①</b> 打开 <a href="https://ad.xiaohongshu.com/" target="_blank" style="color:var(--accent)">ad.xiaohongshu.com</a> → 用你的账号密码<b>登录</b><br>
+<b>②</b> 登录成功后，按键盘 <b>F12</b> 打开开发者工具<br>
+<b>③</b> 点击顶部 <b>「Application」</b>（应用程序）标签<br>
+<b>④</b> 左侧展开 <b>Cookies</b> → 点击 <b>https://ad.xiaohongshu.com</b><br>
+<b>⑤</b> 右侧会显示Cookie列表，找到以下两项：<br>
+　　• <code style="background:#e8e8e8;padding:2px 6px;border-radius:4px">ares.beaker.session.id</code><br>
+　　• <code style="background:#e8e8e8;padding:2px 6px;border-radius:4px">acw_tc</code><br>
+<b>⑥</b> <b>拼接成下面格式</b>粘贴到输入框：<br>
+<div style="background:#1a1a2e;color:#e94560;padding:10px;border-radius:6px;font-size:11px;font-family:monospace;margin-top:4px;word-break:break-all">ares.beaker.session.id=你的值; acw_tc=你的值</div>
+<b>⑦</b> 点击 <b>「💾 保存Cookie」</b>完成
+</div>
+</div>
+
+<p style="font-size:13px;color:var(--text2);margin-bottom:8px">📝 粘贴Cookie到下方：</p>
+<textarea id="cookieInput" style="width:100%;padding:10px;border:2px solid #ddd;border-radius:8px;font-size:13px;font-family:monospace;min-height:80px;resize:vertical" placeholder="ares.beaker.session.id=xxx; acw_tc=xxx"></textarea>
 <div style="display:flex;gap:8px;margin-top:10px">
-<button class="btn btn-primary btn-sm" onclick="saveCookie()" style="flex:1">💾 保存 Cookie</button>
+<button class="btn btn-primary btn-sm" onclick="saveCookie()" style="flex:1">💾 保存Cookie</button>
 <button class="btn btn-secondary btn-sm" onclick="closeCookieModal()">关闭</button>
 </div>
-<p style="font-size:11px;color:#bbb;margin-top:6px">💡 打开 ad.xiaohongshu.com → F12 → Application → Cookies → 复制全部</p>
 </div>
 </div>
 
