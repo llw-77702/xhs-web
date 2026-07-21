@@ -163,6 +163,18 @@ document.getElementById('fileInput').addEventListener('change',function(e){
 var f=e.target.files[0];if(!f)return;readFile(f,function(ids){if(!ids.length)return alert('文件为空')
 document.getElementById('input').value=ids.join('\n');document.getElementById('count').textContent='已输入 '+ids.length+' 条';alert('✅ 导入 '+ids.length+' 条')})})
 
+// 检测本地服务
+setTimeout(function(){
+fetch('http://localhost:5001/',{mode:'no-cors'}).then(function(){
+localStorage.setItem('xhs_server','ok')
+var btn=document.querySelector('#sub1 .btn-primary');btn.disabled=false;btn.style.opacity='1';btn.textContent='🔄 批量转换'
+var info=document.querySelector('#sub1 .info');if(info)info.innerHTML='🟢 本地服务已连接'
+}).catch(function(){
+localStorage.removeItem('xhs_server')
+var btn=document.querySelector('#sub1 .btn-primary');btn.disabled=true;btn.style.opacity='.5';btn.textContent='🔄 服务未连接'
+var info=document.querySelector('#sub1 .info');if(info)info.innerHTML='🔴 本地服务未运行，请使用「广告平台脚本」方式'
+})},1000)
+
 document.getElementById('idFileInput').addEventListener('change',function(e){
 var f=e.target.files[0];if(!f)return;readFile(f,function(ids){if(!ids.length)return alert('文件为空')
 document.getElementById('idInput').value=ids.join('\n');document.getElementById('idCount').textContent='已输入 '+ids.length+' 个ID';alert('✅ 导入 '+ids.length+' 个ID')})})
@@ -223,7 +235,7 @@ XLSX.writeFile(wb,'xhs_results_'+Date.now()+'.xlsx');alert('✅ 已导出 '+_res
 var _idResults=[],SERVER=window.location.origin
 
 function batchConvert(){
-if(window.location.hostname.includes('github.io')){return alert('⚠️ 当前在 GitHub Pages 上，无法直接转换\n\n请使用以下方式之一：\n1. 在本地运行 Flask 服务后访问 http://localhost:5001/\n2. 用「广告平台脚本」方式（F12 → Console）')}
+if(!localStorage.getItem('xhs_server'))return alert('⚠️ 未检测到本地服务\n\n请使用「广告平台脚本」方式（F12 → Console）\n或确保 Flask 服务运行中后刷新页面')
 var raw=document.getElementById('idInput').value,ids=raw.split(/[,\n]+/).map(function(x){return x.trim()}).filter(Boolean)
 if(!ids.length)return alert('请输入笔记ID')
 _idResults=[];var list=document.getElementById('idResultList'),card=document.getElementById('idResultCard'),stats=document.getElementById('idStatsCard')
