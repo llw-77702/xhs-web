@@ -148,15 +148,24 @@ document.getElementById('sub1').classList.toggle('hidden',n!==1);document.getEle
 document.getElementById('idInput').addEventListener('input',function(){document.getElementById('idCount').textContent='已输入 '+this.value.split(/[,\n]+/).filter(function(x){return x.trim()}).length+' 个ID'})
 document.getElementById('input').addEventListener('input',function(){document.getElementById('count').textContent='已输入 '+this.value.split(/[,\n]+/).filter(function(x){return x.trim()}).length+' 条'})
 
-// ==== 通用文件导入 ====
+// ==== 通用文件导入（自动过滤表头行）====
 function readFile(file,cb){
 var ext=file.name.split('.').pop().toLowerCase();
+function filterIds(arr){
+return arr.filter(function(v){
+var s=v.toString().trim()
+// 过滤表头文字
+if(/[一-鿿]/.test(s))return false  // 含中文的跳过
+if(s.length<6)return false                  // 太短的跳过
+if(!s.startsWith('http')&&!/^[a-f0-9]{20,}$/i.test(s))return false  // 不是链接也不是ID就跳过
+return true
+})}
 if(ext==='xlsx'){
 var r=new FileReader();r.onload=function(e){
 var d=new Uint8Array(e.target.result),wb=XLSX.read(d,{type:'array'}),ws=wb.Sheets[wb.SheetNames[0]],a=XLSX.utils.sheet_to_json(ws,{header:1})
-var ids=[];a.forEach(function(r){r.forEach(function(c){if(c&&c.toString().trim())ids.push(c.toString().trim())})});cb(ids)}
+var ids=[];a.forEach(function(r){r.forEach(function(c){if(c&&c.toString().trim())ids.push(c.toString().trim())})});cb(filterIds(ids))}
 r.readAsArrayBuffer(file)
-}else{var r=new FileReader();r.onload=function(e){var ids=e.target.result.split(/[,\n]+/).map(function(x){return x.trim()}).filter(Boolean);cb(ids)};r.readAsText(file)}
+}else{var r=new FileReader();r.onload=function(e){var ids=e.target.result.split(/[,\n]+/).map(function(x){return x.trim()}).filter(Boolean);cb(filterIds(ids))};r.readAsText(file)}
 }
 
 document.getElementById('fileInput').addEventListener('change',function(e){
@@ -193,8 +202,8 @@ document.getElementById('idInput').value=ids.join('\n');document.getElementById(
 // ==== 下载上传模版 ====
 function dlTemplate(){
 var wb=XLSX.utils.book_new()
-var s1=XLSX.utils.aoa_to_sheet([['笔记ID'],['69fd8382000000003701f115'],['69e4612b000000002200c8f5']]);XLSX.utils.book_append_sheet(wb,s1,'笔记ID')
-var s2=XLSX.utils.aoa_to_sheet([['链接'],['https://www.xiaohongshu.com/explore/69fd8382000000003701f115?xsec_token=xxx'],['https://www.xiaohongshu.com/explore/69e4612b000000002200c8f5?xsec_token=xxx']]);XLSX.utils.book_append_sheet(wb,s2,'链接')
+var s1=XLSX.utils.aoa_to_sheet([['笔记ID'],['6a5740c000000000702dbd2'],['6a59db39000000001101e9a6']]);XLSX.utils.book_append_sheet(wb,s1,'笔记ID')
+var s2=XLSX.utils.aoa_to_sheet([['链接'],['https://www.xiaohongshu.com/explore/69fd8382000000003701f115?xsec_token=xxx']]);XLSX.utils.book_append_sheet(wb,s2,'链接')
 XLSX.writeFile(wb,'xhs_upload_template.xlsx')}
 function dlIdTemplate(){dlTemplate()}
 
