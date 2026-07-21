@@ -78,27 +78,22 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Inter','Segoe UI',sans-serif;
 <section class="card">
 <div class="card-header"><h2>📝 ID批量转链接</h2><span class="hint">支持导入.txt/.csv/.xlsx → 批量转换 → 导出Excel</span></div>
 <div class="sub-tabs">
-<button class="st active" onclick="st(1,this)">⚡ 本地转换</button>
-<button class="st" onclick="st(2,this)">🔑 Cookie转换</button>
+<button class="st active" onclick="st(1,this)">📝 ID→链接</button>
 <button class="st" onclick="st(3,this)">🎭 广告脚本</button>
 </div>
 <div id="sub1">
 <textarea class="textarea" id="idInput" rows="5" placeholder="粘贴笔记ID，多个用逗号或换行分隔&#10;69fd8382000000003701f115, 69e4612b000000002200c8f5"></textarea>
+<div id="cookieSection" class="hidden" style="margin-top:8px">
+<div style="font-size:12px;color:var(--text2);margin-bottom:4px">🔑 粘贴Cookie：</div>
+<textarea id="remoteCookie" rows="2" style="width:100%;padding:8px;border:1.5px solid var(--border);border-radius:8px;font-size:12px;font-family:monospace;resize:vertical" placeholder="从 ad.xiaohongshu.com 复制 Cookie 粘贴到这里"></textarea>
+</div>
 <div class="actions">
 <span class="hint" id="idCount">已输入 0 个ID</span>
 <label class="file-upload">📁 导入文件<input type="file" id="idFileInput" accept=".txt,.csv,.xlsx"></label>
 <button class="btn btn-secondary btn-sm" onclick="dlIdTemplate()">📄 下载模版</button>
 <button class="btn btn-primary btn-sm" onclick="batchConvert()">🔄 批量转换</button>
 </div>
-<p class="info">💡 提示：在 <a href="http://localhost:5001/" target="_blank"><b>http://localhost:5001/</b></a> 打开才能使用本地转换，否则请用「广告平台脚本」</p>
-</div>
-<div id="sub2" class="hidden">
-<textarea class="textarea" id="cookieInput2" rows="2" placeholder="粘贴 Cookie（从广告平台 F12 → Application → Cookies 复制）" style="font-size:12px"></textarea>
-<textarea class="textarea" id="idInput2" rows="4" placeholder="粘贴笔记ID，多个用逗号或换行分隔" style="margin-top:8px"></textarea>
-<div class="actions">
-<label class="file-upload">📁 导入ID文件<input type="file" id="idFileInput2" accept=".txt,.csv,.xlsx"></label>
-<button class="btn btn-primary btn-sm" onclick="batchConvert2()">🔄 批量转换</button>
-</div>
+<p class="info" id="localStatus">⏳ 检测本地服务...</p>
 </div>
 <div id="sub3" class="hidden">
 <div class="step-box"><b>①</b> 打开 <a href="https://ad.xiaohongshu.com/" target="_blank">ad.xiaohongshu.com</a> 登录<br><b>②</b> 按 F12 → Console<br><b>③</b> 点下面代码框全选 → Ctrl+C<br><b>④</b> 控制台 Ctrl+V → 回车 → 弹窗中操作</div>
@@ -174,7 +169,7 @@ document.getElementById('idResultCard').style.display='none';document.getElement
 
 function st(n,el){
 el.parentElement.querySelectorAll('.st').forEach(function(t){t.classList.remove('active')});el.classList.add('active')
-document.getElementById('sub1').classList.toggle('hidden',n!==1);document.getElementById('sub2').classList.toggle('hidden',n!==2);document.getElementById('sub3').classList.toggle('hidden',n!==3)
+document.getElementById('sub1').classList.toggle('hidden',n!==1);document.getElementById('sub3').classList.toggle('hidden',n!==3)
 }
 
 document.getElementById('idInput').addEventListener('input',function(){document.getElementById('idCount').textContent='已输入 '+this.value.split(/[,\n]+/).filter(function(x){return x.trim()}).length+' 个ID'})
@@ -217,13 +212,16 @@ if(ok){localStorage.setItem('xhs_server',url);SERVER=url
 }else{localStorage.removeItem('xhs_server')}
 var btn=document.querySelector('#sub1 .btn-primary')
 var info=document.querySelector('#sub1 .info')
-if(!btn)return
+var cookieSec=document.getElementById('cookieSection')
+if(!btn||!info)return
 if(ok){
 btn.disabled=false;btn.style.opacity='1';btn.textContent='🔄 批量转换'
-if(info)info.innerHTML='🟢 本地服务已连接'
+info.innerHTML='🟢 本地服务已连接'
+cookieSec.classList.add('hidden')
 }else{
-btn.disabled=true;btn.style.opacity='.5';btn.textContent='🔄 本地未连接'
-if(info)info.innerHTML='🔴 未检测到本地服务 → 请使用「<a href="#" onclick="st(2,document.querySelectorAll(\'.st\')[1]);return false" style="color:var(--accent)">🎭 广告平台脚本</a>」'
+btn.disabled=true;btn.style.opacity='.5';btn.textContent='🔄 批量转换'
+info.innerHTML='🔴 网络转换（请输入上方 Cookie）'
+cookieSec.classList.remove('hidden')
 }}
 checkServer()
 
@@ -289,21 +287,26 @@ XLSX.writeFile(wb,'xhs_results_'+Date.now()+'.xlsx');alert('✅ 已导出 '+_res
 var _idResults=[],SERVER=localStorage.getItem('xhs_server')||''
 
 function batchConvert(){
-if(!localStorage.getItem('xhs_server'))return alert('⚠️ 未检测到本地服务\n\n请使用「广告平台脚本」方式（F12 → Console）\n或确保 Flask 服务运行中后刷新页面')
 var raw=document.getElementById('idInput').value,ids=raw.split(/[,\n]+/).map(function(x){return x.trim()}).filter(Boolean)
 if(!ids.length)return alert('请输入笔记ID')
-_idResults=[];var list=document.getElementById('idResultList'),card=document.getElementById('idResultCard'),stats=document.getElementById('idStatsCard')
-list.innerHTML='';card.style.display='';stats.innerHTML=''
-var done=0,total=ids.length
+var list=document.getElementById('idResultList'),card=document.getElementById('idResultCard'),stats=document.getElementById('idStatsCard')
+_idResults=[];list.innerHTML='';card.style.display='';stats.innerHTML=''
+// 本地模式 or 远程Cookie模式
+var isLocal=!!localStorage.getItem('xhs_server')
+var cookie=isLocal?'':document.getElementById('remoteCookie').value.trim()
+if(!isLocal&&(!cookie||!cookie.includes('ares.beaker.session.id')))return alert('❌ 请先在下方输入Cookie')
+localStorage.setItem('xhs_cookie',cookie||'')
+var done=0,total=ids.length,api=isLocal?'/api/convert':'/api/convert_with_cookie'
 ids.forEach(function(id){
-fetch(SERVER+'/api/convert',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({noteIds:id})})
+var body=isLocal?JSON.stringify({noteIds:id}):JSON.stringify({noteIds:id,cookie:cookie})
+fetch((isLocal?SERVER:window.location.origin)+api,{method:'POST',headers:{'Content-Type':'application/json'},body:body})
 .then(function(r){return r.json()}).then(function(res){
 done++
 if(res.success&&res.results){res.results.forEach(function(r){
 if(r.success){_idResults.push({id:r.id,url:r.url})
 list.innerHTML+='<div class=\"result-item ok\"><div>✅</div><div class=\"result-content\"><div class=\"result-id\">'+r.id+'</div><div class=\"result-url\"><a href=\"'+r.url+'\" target=\"_blank\">'+r.url+'</a></div></div></div>'}
 else{list.innerHTML+='<div class=\"result-item err\"><div>❌</div><div class=\"result-content\"><div class=\"result-id\">'+r.id+'</div><div class=\"result-url\">获取失败</div></div></div>'}})}
-else{list.innerHTML+='<div class=\"result-item err\"><div>❌</div><div class=\"result-content\"><div class=\"result-id\">错误</div><div class=\"result-url\">'+(res.error||'Cookie过期')+'</div></div></div>'}
+else{list.innerHTML+='<div class=\"result-item err\"><div>❌</div><div class=\"result-content\"><div class=\"result-id\">错误</div><div class=\"result-url\">'+(res.error||'请求失败')+'</div></div></div>'}
 }).catch(function(e){done++
 list.innerHTML+='<div class=\"result-item err\"><div>❌</div><div class=\"result-content\"><div class=\"result-id\">请求失败</div><div class=\"result-url\">'+e.message+'</div></div></div>'
 }).then(function(){
@@ -320,37 +323,6 @@ var wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_s
 XLSX.writeFile(wb,'xhs_links_'+Date.now()+'.xlsx');alert('✅ 已导出 '+_idResults.length+' 条链接到Excel')}
 
 // ========== Cookie转换 (sub2) ==========
-document.getElementById('idFileInput2').addEventListener('change',function(e){
-var f=e.target.files[0];if(!f)return;readFile(f,function(ids){
-if(!ids.length)return alert('文件为空')
-document.getElementById('idInput2').value=ids.join('\n');alert('✅ 导入 '+ids.length+' 个ID')})})
-
-function batchConvert2(){
-var cookie=document.getElementById('cookieInput2').value.trim()
-if(!cookie||!cookie.includes('ares.beaker.session.id'))return alert('❌ 请输入有效的 Cookie')
-var raw=document.getElementById('idInput2').value,ids=raw.split(/[,\n]+/).map(function(x){return x.trim()}).filter(Boolean)
-if(!ids.length)return alert('❌ 请输入笔记ID')
-// 保存 Cookie 到本地
-localStorage.setItem('xhs_cookie',cookie);savedCookie=cookie
-
-_idResults=[];var list=document.getElementById('idResultList'),card=document.getElementById('idResultCard'),stats=document.getElementById('idStatsCard')
-list.innerHTML='';card.style.display='';stats.innerHTML=''
-var done=0,total=ids.length
-ids.forEach(function(id){
-fetch(SERVER+'/api/convert_with_cookie',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({noteIds:id,cookie:cookie})})
-.then(function(r){return r.json()}).then(function(res){
-done++
-if(res.success&&res.results){res.results.forEach(function(r){
-if(r.success){_idResults.push({id:r.id,url:r.url})
-list.innerHTML+='<div class="result-item ok"><div>✅</div><div class="result-content"><div class="result-id">'+r.id+'</div><div class="result-url"><a href="'+r.url+'" target="_blank">'+r.url+'</a></div></div></div>'}
-else{list.innerHTML+='<div class="result-item err"><div>❌</div><div class="result-content"><div class="result-id">'+r.id+'</div><div class="result-url">获取失败</div></div></div>'}})}
-else{list.innerHTML+='<div class="result-item err"><div>❌</div><div class="result-content"><div class="result-id">错误</div><div class="result-url">'+(res.error||'请求失败')+'</div></div></div>'}
-}).catch(function(e){done++
-list.innerHTML+='<div class="result-item err"><div>❌</div><div class="result-content"><div class="result-id">请求失败</div><div class="result-url">'+e.message+'</div></div></div>'
-}).then(function(){
-if(done>=total){var ok=_idResults.length;stats.innerHTML='<div class="stats-grid"><div class="stat-item"><div class="stat-value">'+ok+'</div><div class="stat-label">✅成功</div></div><div class="stat-item"><div class="stat-value">'+(total-ok)+'</div><div class="stat-label">❌失败</div></div><div class="stat-item"><div class="stat-value">'+total+'</div><div class="stat-label">📊总计</div></div></div>'}
-})
-})}
 
 // ========== Cookie管理 ==========
 var savedCookie=localStorage.getItem('xhs_cookie')||''
