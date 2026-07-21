@@ -169,8 +169,9 @@ document.getElementById('idInput').value=ids.join('\n');document.getElementById(
 
 // ==== 下载上传模版 ====
 function dlTemplate(){
-var data=[['笔记ID','链接'],['在此粘贴ID','或在此粘贴链接'],['69fd8382000000003701f115','https://www.xiaohongshu.com/explore/69fd8382000000003701f115?xsec_token=xxx']]
-var wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(data),'模版')
+var wb=XLSX.utils.book_new()
+var s1=XLSX.utils.aoa_to_sheet([['笔记ID'],['69fd8382000000003701f115'],['69e4612b000000002200c8f5']]);XLSX.utils.book_append_sheet(wb,s1,'笔记ID')
+var s2=XLSX.utils.aoa_to_sheet([['链接'],['https://www.xiaohongshu.com/explore/69fd8382000000003701f115?xsec_token=xxx'],['https://www.xiaohongshu.com/explore/69e4612b000000002200c8f5?xsec_token=xxx']]);XLSX.utils.book_append_sheet(wb,s2,'链接')
 XLSX.writeFile(wb,'xhs_upload_template.xlsx')}
 function dlIdTemplate(){dlTemplate()}
 
