@@ -126,43 +126,89 @@
 (function(){
   if(document.getElementById('xhs-id-converter')){alert('已打开');return;}
 
-  const modal=document.createElement('div');
-  modal.id='xhs-id-converter';
-  modal.innerHTML=\`
-  <div style="position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:999999;background:white;border-radius:16px;padding:24px;box-shadow:0 10px 40px rgba(0,0,0,0.3);width:500px;max-width:90vw;font-family:-apple-system,BlinkMacSystemFont,sans-serif;">
-    <h2 style="margin-bottom:12px;">🍠 笔记ID转链接</h2>
-    <textarea id="xhs-ids" style="width:100%;padding:10px;border:2px solid #ddd;border-radius:8px;font-size:14px;min-height:80px;font-family:monospace;" placeholder="粘贴笔记ID，多个用逗号分隔"></textarea>
-    <div style="margin-top:8px;font-size:12px;color:#999;" id="xhs-count">已输入 0 个 ID</div>
-    <button onclick="window._xhsConvert()" style="width:100%;padding:12px;margin-top:10px;border:none;border-radius:8px;background:#fe2c55;color:white;font-size:16px;font-weight:600;cursor:pointer;">🔗 转换</button>
-    <div id="xhs-results" style="margin-top:12px;max-height:300px;overflow-y:auto;"></div>
+  // 解析函数
+  function urlToId(str) {
+    // https://www.xiaohongshu.com/explore/{id}?xsec_token=...
+    var m = str.match(/explore\\/([a-f0-9]+)/i);
+    if(m) return m[1];
+    // https://www.xiaohongshu.com/discovery/item/{id}
+    m = str.match(/discovery\\/item\\/([a-f0-9]+)/i);
+    if(m) return m[1];
+    // 已经是纯ID（24位十六进制）
+    if(/^[a-f0-9]{24}$/i.test(str.trim())) return str.trim();
+    return null;
+  }
+
+  var mode = 'id2url';
+  var html = \`
+  <div style="position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:999999;background:white;border-radius:16px;padding:24px;box-shadow:0 10px 40px rgba(0,0,0,0.3);width:560px;max-width:92vw;font-family:-apple-system,BlinkMacSystemFont,sans-serif;">
+    <div style="display:flex;gap:8px;margin-bottom:12px;">
+      <button id="xhs-tab1" onclick="window._xhsSwitch(1)" style="flex:1;padding:8px;border-radius:8px;border:2px solid #fe2c55;background:#fe2c55;color:white;font-size:14px;cursor:pointer;font-weight:600;">ID → 链接</button>
+      <button id="xhs-tab2" onclick="window._xhsSwitch(2)" style="flex:1;padding:8px;border-radius:8px;border:2px solid #ddd;background:white;color:#666;font-size:14px;cursor:pointer;">链接 → ID</button>
+    </div>
+    <textarea id="xhs-input" style="width:100%;padding:10px;border:2px solid #ddd;border-radius:8px;font-size:14px;min-height:80px;font-family:monospace;" placeholder="粘贴笔记ID或链接，多个用逗号或换行分隔"></textarea>
+    <div style="margin-top:6px;font-size:12px;color:#999;" id="xhs-count">已输入 0 项</div>
+    <button onclick="window._xhsConvert()" style="width:100%;padding:12px;margin-top:8px;border:none;border-radius:8px;background:#fe2c55;color:white;font-size:16px;font-weight:600;cursor:pointer;">🔗 转换</button>
+    <div id="xhs-results" style="margin-top:12px;max-height:350px;overflow-y:auto;"></div>
+    <div style="margin-top:8px;text-align:right;">
+      <button onclick="navigator.clipboard.writeText(document.getElementById('xhs-results').innerText)" style="border:none;background:#f0f0f0;padding:6px 12px;border-radius:6px;font-size:12px;cursor:pointer;">📋 复制结果</button>
+    </div>
     <button onclick="this.parentElement.parentElement.remove()" style="position:absolute;top:10px;right:14px;border:none;background:none;font-size:22px;cursor:pointer;">×</button>
   </div>\`;
-  document.body.appendChild(modal);
+  document.body.insertAdjacentHTML('beforeend',html);
 
-  const ids=document.getElementById('xhs-ids');
-  ids.addEventListener('input',function(){
-    const count=this.value.split(/[,\\n]+/).filter(n=>n.trim()).length;
-    document.getElementById('xhs-count').textContent='已输入 '+count+' 个 ID';
+  var input=document.getElementById('xhs-input');
+  input.addEventListener('input',function(){
+    var items=this.value.split(/[,\\n]+/).filter(function(n){return n.trim();});
+    document.getElementById('xhs-count').textContent='已输入 '+items.length+' 项';
   });
 
+  window._xhsSwitch=function(m){
+    mode=m===1?'id2url':'url2id';
+    var tab1=document.getElementById('xhs-tab1'),tab2=document.getElementById('xhs-tab2');
+    if(mode==='id2url'){
+      tab1.style.border='2px solid #fe2c55';tab1.style.background='#fe2c55';tab1.style.color='white';tab1.style.fontWeight='600';
+      tab2.style.border='2px solid #ddd';tab2.style.background='white';tab2.style.color='#666';tab2.style.fontWeight='400';
+      input.placeholder='粘贴笔记ID，多个用逗号或换行分隔';
+    }else{
+      tab2.style.border='2px solid #fe2c55';tab2.style.background='#fe2c55';tab2.style.color='white';tab2.style.fontWeight='600';
+      tab1.style.border='2px solid #ddd';tab1.style.background='white';tab1.style.color='#666';tab1.style.fontWeight='400';
+      input.placeholder='粘贴长链接，多个用逗号或换行分隔';
+    }
+  };
+
   window._xhsConvert=async function(){
-    const noteIds=ids.value.split(/[,\\n]+/).map(n=>n.trim()).filter(Boolean);
-    if(!noteIds.length){alert('请输入ID');return;}
+    var raw=input.value;
+    var items=raw.split(/[,\\n]+/).map(function(n){return n.trim();}).filter(Boolean);
+    if(!items.length){alert('请输入内容');return;}
+    var div=document.getElementById('xhs-results');
+
+    if(mode==='url2id'){
+      // 链接 → ID
+      div.innerHTML=items.map(function(item){
+        var id=urlToId(item);
+        if(id) return '<div style="padding:8px;border-radius:8px;background:#f0fff0;margin-bottom:6px;"><div style="font-size:11px;color:#888;word-break:break-all;">'+item+'</div><div style="font-size:14px;color:#333;margin-top:4px;">✅ <strong>'+id+'</strong></div></div>';
+        return '<div style="padding:8px;border-radius:8px;background:#fff0f0;margin-bottom:6px;"><div style="font-size:11px;color:#888;">'+item+'</div><div style="color:#e74c3c;font-size:13px;margin-top:4px;">❌ 无法识别</div></div>';
+      }).join('');
+      return;
+    }
+
+    // ID → 链接（调 API）
+    var noteIds=items;
     try{
-      const resp=await fetch('/api/light/note/token',{
+      var resp=await fetch('/api/light/note/token',{
         method:'POST',
         headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({noteIds,source:'pc_ad'})
+        body:JSON.stringify({noteIds:noteIds,source:'pc_ad'})
       });
-      const res=await resp.json();
-      const div=document.getElementById('xhs-results');
+      var res=await resp.json();
       if(res.code===0&&res.data){
-        div.innerHTML=noteIds.map(id=>{
-          const info=res.data[id];
-          const token=typeof info==='string'?info:(info?.xsec_token||'');
+        div.innerHTML=noteIds.map(function(id){
+          var info=res.data[id];
+          var token=typeof info==='string'?info:(info&&info.xsec_token?info.xsec_token:'');
           if(token){
-            const url='https://www.xiaohongshu.com/explore/'+id+'?xsec_token='+token;
-            return '<div style="padding:8px;border-radius:8px;background:#f0fff0;margin-bottom:6px;"><div style="font-size:12px;color:#888;">'+id+'</div><div style="font-size:13px;word-break:break-all;"><a href="'+url+'" target="_blank" style="color:#fe2c55;text-decoration:none;">'+url+'</a></div><button onclick="navigator.clipboard.writeText(\\''+url+'\\');this.textContent=\\u2705 已复制" style="border:none;background:#fe2c55;color:white;padding:4px 10px;border-radius:6px;font-size:12px;cursor:pointer;margin-top:4px;">📋 复制</button></div>';
+            var url='https://www.xiaohongshu.com/explore/'+id+'?xsec_token='+token;
+            return '<div style="padding:8px;border-radius:8px;background:#f0fff0;margin-bottom:6px;"><div style="font-size:12px;color:#888;">'+id+'</div><div style="font-size:13px;word-break:break-all;"><a href="'+url+'" target="_blank" style="color:#fe2c55;text-decoration:none;">'+url+'</a></div><button onclick="navigator.clipboard.writeText(\\''+url+'\\');this.textContent=\\\'✅ 已复制\\'" style="border:none;background:#fe2c55;color:white;padding:4px 10px;border-radius:6px;font-size:12px;cursor:pointer;margin-top:4px;">📋 复制</button></div>';
           }
           return '<div style="padding:8px;border-radius:8px;background:#fff0f0;margin-bottom:6px;"><div style="font-size:12px;color:#888;">'+id+'</div><div style="color:#e74c3c;font-size:13px;">❌ 获取失败</div></div>';
         }).join('');
@@ -170,7 +216,7 @@
         div.innerHTML='<div style="color:#e74c3c;">错误: '+(res.msg||'未知错误')+'</div>';
       }
     }catch(e){
-      document.getElementById('xhs-results').innerHTML='<div style="color:#e74c3c;">请求失败: '+e.message+'</div>';
+      div.innerHTML='<div style="color:#e74c3c;">请求失败: '+e.message+'</div>';
     }
   };
 })();`;
