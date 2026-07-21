@@ -44,7 +44,6 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Inter','Segoe UI',sans-serif;
 .result-url a{color:var(--accent);text-decoration:none}
 .step-box{font-size:13px;color:var(--text2);line-height:1.8;padding:12px 14px;background:#f8f8fa;border-radius:8px;margin-bottom:12px}
 .step-box b{color:var(--accent)}
-.script-box{background:#1a1a2e;color:#e94560;padding:12px;border-radius:8px;font-size:10px;font-family:Menlo,monospace;line-height:1.6;max-height:120px;overflow:auto;cursor:pointer;margin-bottom:8px}
 .file-upload{display:inline-block;padding:6px 12px;background:#f8f8fa;border:1px dashed var(--border);border-radius:8px;font-size:12px;color:var(--text2);cursor:pointer;transition:all .2s}
 .file-upload:hover{background:var(--border)}.file-upload input{display:none}
 .actions{display:flex;align-items:center;gap:8px;margin-top:10px;flex-wrap:wrap}
@@ -79,7 +78,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Inter','Segoe UI',sans-serif;
 <div class="card-header"><h2>📝 ID批量转链接</h2><span class="hint">支持导入.txt/.csv/.xlsx → 批量转换 → 导出Excel</span></div>
 <div class="sub-tabs">
 <button class="st active" onclick="st(1,this)">📝 ID→链接</button>
-<button class="st" onclick="st(3,this)">🎭 广告脚本</button>
+<button class="st" onclick="st(2,this)">🔗 提取笔记信息</button>
 </div>
 <div id="sub1">
 <textarea class="textarea" id="idInput" rows="5" placeholder="粘贴笔记ID，多个用逗号或换行分隔&#10;69fd8382000000003701f115, 69e4612b000000002200c8f5"></textarea>
@@ -94,11 +93,6 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Inter','Segoe UI',sans-serif;
 <button class="btn btn-primary btn-sm" onclick="batchConvert()">🔄 批量转换</button>
 </div>
 <p class="info" id="localStatus">⏳ 检测本地服务...</p>
-</div>
-<div id="sub3" class="hidden">
-<div class="step-box"><b>①</b> 打开 <a href="https://ad.xiaohongshu.com/" target="_blank">ad.xiaohongshu.com</a> 登录<br><b>②</b> 按 F12 → Console<br><b>③</b> 点下面代码框全选 → Ctrl+C<br><b>④</b> 控制台 Ctrl+V → 回车 → 弹窗中操作</div>
-<div class="script-box" onclick="sel(this)"></div>
-<p class="info">👆 点击代码框全选，复制后在控制台运行</p>
 </div>
 </section>
 <section class="card" id="idResultCard" style="display:none">
@@ -156,10 +150,9 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Inter','Segoe UI',sans-serif;
 </div>
 
 <script>
-var SCRIPT="(function(){if(document.getElementById('x'))return;var d=document.createElement('div');d.id='x';d.style.cssText='position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:99999;background:#fff;border-radius:14px;padding:20px;box-shadow:0 10px 40px rgba(0,0,0,.3);width:520px;max-width:90vw;font-family:-apple-system,sans-serif;';d.innerHTML='<h2 style=\"margin:0 0 10px;font-size:18px\">🍠 笔记ID转链接</h2><textarea id=\"i\" style=\"width:100%;padding:10px;border:2px solid #ddd;border-radius:8px;font-size:14px;min-height:80px;font-family:monospace\" placeholder=\"粘贴笔记ID，多个用逗号分隔\"></textarea><div style=\"margin:4px 0;font-size:12px;color:#999\" id=\"c\">已输入 0 个ID</div><button onclick=\"r()\" style=\"width:100%;padding:12px;border:none;border-radius:8px;background:#fe2c55;color:#fff;font-size:16px;font-weight:600;cursor:pointer\">转换</button><div id=\"o\" style=\"margin-top:10px;max-height:350px;overflow-y:auto;font-size:14px\"></div><button onclick=\"this.parentElement.remove()\" style=\"position:absolute;top:8px;right:12px;border:none;background:none;font-size:24px;cursor:pointer\">×</button>';document.body.appendChild(d);var i=document.getElementById('i');i.oninput=function(){document.getElementById('c').textContent='已输入 '+this.value.split(/[,\\\n]+/).filter(function(n){return n.trim()}).length+' 个ID'};window.r=function(){var v=document.getElementById('i').value,ids=v.split(/[,\\\n]+/).map(function(n){return n.trim()}).filter(Boolean),o=document.getElementById('o');if(!ids.length)return alert('请输入ID');fetch('/api/light/note/token',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({noteIds:ids,source:'pc_ad'})}).then(function(r){return r.json()}).then(function(j){if(j.code==0&&j.data){o.innerHTML=ids.map(function(id){var t=typeof j.data[id]=='string'?j.data[id]:(j.data[id]&&j.data[id].xsec_token?j.data[id].xsec_token:'');if(t){var u='https://www.xiaohongshu.com/explore/'+id+'?xsec_token='+t;return '<div style=\"padding:8px;border-radius:8px;background:#f0fff4;margin-bottom:6px;font-size:13px\"><div style=\"font-size:11px;color:#999\">'+id+'</div><div style=\"word-break:break-all;color:#fe2c55\">'+u+'</div><button onclick=\"navigator.clipboard.writeText(\\''+u+'\\\');this.textContent=\\'✅ 复制成功\\'\" style=\"border:none;background:#fe2c55;color:#fff;padding:3px 8px;border-radius:4px;font-size:11px;cursor:pointer;margin-top:4px\">复制</button></div>'}return '<div style=\"padding:8px;border-radius:8px;background:#fff0f0;margin:6px 0;color:#e74c3c;font-size:13px\">❌'+id+' 获取失败</div>'}).join('')}else o.innerHTML='<div style=\"color:#e74c3c;font-size:13px\">错误:'+(j.msg||'请检查Cookie')+'</div>'}).catch(function(e){o.innerHTML='<div style=\"color:#e74c3c;font-size:13px\">请求失败:'+e.message+'</div>'})}})()";
-document.querySelector('.script-box').textContent=SCRIPT;
 
-function sel(e){var r=document.createRange();r.selectNodeContents(e);var s=window.getSelection();s.removeAllRanges();s.addRange(r)}
+
+
 
 function switchTab(n,el){
 document.querySelectorAll('.tab').forEach(function(t){t.classList.remove('active')});el.classList.add('active')
@@ -169,7 +162,7 @@ document.getElementById('idResultCard').style.display='none';document.getElement
 
 function st(n,el){
 el.parentElement.querySelectorAll('.st').forEach(function(t){t.classList.remove('active')});el.classList.add('active')
-document.getElementById('sub1').classList.toggle('hidden',n!==1);document.getElementById('sub3').classList.toggle('hidden',n!==3)
+document.getElementById('sub1').classList.toggle('hidden',n!==1)
 }
 
 document.getElementById('idInput').addEventListener('input',function(){document.getElementById('idCount').textContent='已输入 '+this.value.split(/[,\n]+/).filter(function(x){return x.trim()}).length+' 个ID'})
