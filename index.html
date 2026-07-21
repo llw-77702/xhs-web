@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🍠 小红书笔记ID转链接</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Microsoft YaHei', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        .container { max-width: 640px; width: 100%; }
+        .card {
+            background: white;
+            border-radius: 16px;
+            padding: 28px;
+            margin-bottom: 16px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+        }
+        .header { text-align: center; margin-bottom: 24px; }
+        .header h1 { font-size: 26px; color: #333; }
+        .header p { font-size: 14px; color: #999; margin-top: 6px; }
+        .step {
+            background: #f8f9ff;
+            border: 2px solid #667eea;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 16px;
+        }
+        .step h3 { color: #667eea; margin-bottom: 10px; font-size: 16px; }
+        .step p { font-size: 14px; color: #555; line-height: 1.6; }
+        .code-box {
+            background: #1a1a2e;
+            color: #e94560;
+            padding: 14px;
+            border-radius: 8px;
+            font-family: 'Menlo', 'Monaco', monospace;
+            font-size: 12px;
+            overflow-x: auto;
+            white-space: pre-wrap;
+            word-break: break-all;
+            margin: 10px 0;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        .btn {
+            display: inline-block;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            color: white;
+            text-decoration: none;
+            text-align: center;
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(102,126,234,0.4); }
+        .btn-copy { background: #27ae60; }
+        .btn-copy:hover { background: #2ecc71; }
+        .btn-full { display: block; width: 100%; }
+        .hint { font-size: 12px; color: #aaa; margin-top: 8px; }
+        .warn { background: #fff3cd; border: 1px solid #ffc107; border-radius: 8px; padding: 12px; font-size: 13px; color: #856404; margin-bottom: 12px; }
+        .footer { text-align: center; color: rgba(255,255,255,0.7); font-size: 12px; margin-top: 16px; }
+        ol { padding-left: 20px; }
+        ol li { margin-bottom: 8px; font-size: 14px; color: #555; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🍠 小红书笔记ID转链接</h1>
+            <p>无需安装，直接在浏览器中使用</p>
+        </div>
+
+        <div class="card">
+            <div class="warn">
+                ⚡ 使用方法：先打开小红书广告平台并登录，然后按下面步骤操作
+            </div>
+
+            <div class="step">
+                <h3>第1步：打开广告平台</h3>
+                <p>访问 <a href="https://ad.xiaohongshu.com/" target="_blank">ad.xiaohongshu.com</a>，用你的账号登录</p>
+            </div>
+
+            <div class="step">
+                <h3>第2步：打开控制台</h3>
+                <p>按键盘 <strong>F12</strong>（或 <strong>Ctrl+Option+I</strong>）→ 点击 <strong>Console</strong>（控制台）标签</p>
+            </div>
+
+            <div class="step">
+                <h3>第3步：复制粘贴下面的脚本</h3>
+                <p>点击「复制脚本」按钮，然后在控制台里 <strong>Ctrl+V</strong>（或 <strong>Command+V</strong>）粘贴，按回车</p>
+                <div class="code-box" id="codeBox">javascript:void(function(){...})</div>
+                <button class="btn btn-copy btn-full" onclick="copyScript()">📋 复制脚本</button>
+                <p class="hint">复制后在控制台粘贴运行即可</p>
+            </div>
+
+            <div class="step">
+                <h3>第4步：使用</h3>
+                <p>脚本运行后会弹出一个小窗口：<br>
+                1. 粘贴笔记ID（多个用逗号分隔）<br>
+                2. 点「转换」<br>
+                3. 看到结果后点「复制链接」</p>
+            </div>
+
+            <a href="https://ad.xiaohongshu.com/" target="_blank" class="btn btn-primary btn-full">🚀 打开小红书广告平台</a>
+        </div>
+
+        <div class="footer">Cookie 仅保存在你的浏览器中，不会上传到任何地方</div>
+    </div>
+
+    <script>
+        // 注入到控制台运行的脚本
+        const SCRIPT = `
+(function(){
+  if(document.getElementById('xhs-id-converter')){alert('已打开');return;}
+
+  const modal=document.createElement('div');
+  modal.id='xhs-id-converter';
+  modal.innerHTML=\`
+  <div style="position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:999999;background:white;border-radius:16px;padding:24px;box-shadow:0 10px 40px rgba(0,0,0,0.3);width:500px;max-width:90vw;font-family:-apple-system,BlinkMacSystemFont,sans-serif;">
+    <h2 style="margin-bottom:12px;">🍠 笔记ID转链接</h2>
+    <textarea id="xhs-ids" style="width:100%;padding:10px;border:2px solid #ddd;border-radius:8px;font-size:14px;min-height:80px;font-family:monospace;" placeholder="粘贴笔记ID，多个用逗号分隔"></textarea>
+    <div style="margin-top:8px;font-size:12px;color:#999;" id="xhs-count">已输入 0 个 ID</div>
+    <button onclick="window._xhsConvert()" style="width:100%;padding:12px;margin-top:10px;border:none;border-radius:8px;background:#fe2c55;color:white;font-size:16px;font-weight:600;cursor:pointer;">🔗 转换</button>
+    <div id="xhs-results" style="margin-top:12px;max-height:300px;overflow-y:auto;"></div>
+    <button onclick="this.parentElement.parentElement.remove()" style="position:absolute;top:10px;right:14px;border:none;background:none;font-size:22px;cursor:pointer;">×</button>
+  </div>\`;
+  document.body.appendChild(modal);
+
+  const ids=document.getElementById('xhs-ids');
+  ids.addEventListener('input',function(){
+    const count=this.value.split(/[,\\n]+/).filter(n=>n.trim()).length;
+    document.getElementById('xhs-count').textContent='已输入 '+count+' 个 ID';
+  });
+
+  window._xhsConvert=async function(){
+    const noteIds=ids.value.split(/[,\\n]+/).map(n=>n.trim()).filter(Boolean);
+    if(!noteIds.length){alert('请输入ID');return;}
+    try{
+      const resp=await fetch('/api/light/note/token',{
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({noteIds,source:'pc_ad'})
+      });
+      const res=await resp.json();
+      const div=document.getElementById('xhs-results');
+      if(res.code===0&&res.data){
+        div.innerHTML=noteIds.map(id=>{
+          const info=res.data[id];
+          const token=typeof info==='string'?info:(info?.xsec_token||'');
+          if(token){
+            const url='https://www.xiaohongshu.com/explore/'+id+'?xsec_token='+token;
+            return '<div style="padding:8px;border-radius:8px;background:#f0fff0;margin-bottom:6px;"><div style="font-size:12px;color:#888;">'+id+'</div><div style="font-size:13px;word-break:break-all;"><a href="'+url+'" target="_blank" style="color:#fe2c55;text-decoration:none;">'+url+'</a></div><button onclick="navigator.clipboard.writeText(\\''+url+'\\');this.textContent=\\u2705 已复制" style="border:none;background:#fe2c55;color:white;padding:4px 10px;border-radius:6px;font-size:12px;cursor:pointer;margin-top:4px;">📋 复制</button></div>';
+          }
+          return '<div style="padding:8px;border-radius:8px;background:#fff0f0;margin-bottom:6px;"><div style="font-size:12px;color:#888;">'+id+'</div><div style="color:#e74c3c;font-size:13px;">❌ 获取失败</div></div>';
+        }).join('');
+      }else{
+        div.innerHTML='<div style="color:#e74c3c;">错误: '+(res.msg||'未知错误')+'</div>';
+      }
+    }catch(e){
+      document.getElementById('xhs-results').innerHTML='<div style="color:#e74c3c;">请求失败: '+e.message+'</div>';
+    }
+  };
+})();`;
+
+        document.getElementById('codeBox').textContent = SCRIPT;
+
+        function copyScript() {
+            navigator.clipboard.writeText(SCRIPT).then(() => {
+                alert('✅ 脚本已复制！\n\n下一步：打开 ad.xiaohongshu.com → F12 → Console → Ctrl+V → 回车');
+            });
+        }
+    </script>
+</body>
+</html>
