@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>🍠 小红书笔记ID转链接</title>
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
 :root{--bg:#f5f5f7;--surface:#fff;--border:#e5e5ea;--accent:#fe2c55;--accent-hover:#e8264a;--text:#1d1d1f;--text2:#6e6e73;--text3:#aeaeb2;--shadow:0 1px 3px rgba(0,0,0,.08);--radius:12px}
@@ -91,7 +92,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Inter','Segoe UI',sans-serif;
 <textarea class="textarea" id="input" rows="5" placeholder="粘贴链接，多个用逗号或换行分隔&#10;https://www.xiaohongshu.com/explore/..."></textarea>
 <div style="display:flex;align-items:center;gap:8px;margin-top:10px;flex-wrap:wrap">
 <span class="hint" id="count">已输入 0 条</span>
-<label class="file-upload">📁 导入文件<input type="file" id="fileInput" accept=".txt,.csv"></label>
+<label class="file-upload">📁 导入文件<input type="file" id="fileInput" accept=".txt,.csv,.xlsx"></label>
 <button class="btn btn-primary btn-sm" onclick="run()">🔍 批量提取</button>
 </div>
 </section>
@@ -127,19 +128,26 @@ document.getElementById('resultCard').style.display='none'
 document.getElementById('input').addEventListener('input',function(){
 document.getElementById('count').textContent='已输入 '+this.value.split(/[,\n]+/).filter(function(x){return x.trim()}).length+' 条'})
 
-// 文件导入
+// 文件导入（支持 .txt/.csv/.xlsx）
 document.getElementById('fileInput').addEventListener('change',function(e){
-var f=e.target.files[0];if(!f)return;var reader=new FileReader();
+var f=e.target.files[0];if(!f)return;
+var ext=f.name.split('.').pop().toLowerCase();
+if(ext==='xlsx'){
+var reader=new FileReader();
 reader.onload=function(ev){
-var text=ev.target.result;
-var ids=text.split(/[,\n]+/).map(function(x){return x.trim()}).filter(Boolean);
+var data=new Uint8Array(ev.target.result);var wb=XLSX.read(data,{type:'array'});var ws=wb.Sheets[wb.SheetNames[0]];var a=XLSX.utils.sheet_to_json(ws,{header:1});
+var ids=[];a.forEach(function(r){r.forEach(function(c){if(c&&c.toString().trim())ids.push(c.toString().trim())})});
 if(!ids.length){alert('文件为空');return}
-var el=document.getElementById('input');
-if(el.value.trim())ids.unshift(el.value.trim());
-el.value=ids.join('\n');
-document.getElementById('count').textContent='已输入 '+ids.length+' 条'
-alert('✅ 导入成功：'+ids.length+' 条')
-};reader.readAsText(f)})
+document.getElementById('input').value=ids.join('\n');document.getElementById('count').textContent='已输入 '+ids.length+' 条';alert('✅ 从 Excel 导入 '+ids.length+' 条')
+};reader.readAsArrayBuffer(f)
+}else{
+var reader=new FileReader();
+reader.onload=function(ev){
+var text=ev.target.result;var ids=text.split(/[,\n]+/).map(function(x){return x.trim()}).filter(Boolean);
+if(!ids.length){alert('文件为空');return}
+document.getElementById('input').value=ids.join('\n');document.getElementById('count').textContent='已输入 '+ids.length+' 条';alert('✅ 导入成功：'+ids.length+' 条')
+};reader.readAsText(f)}
+})
 
 function parse(s){
 var id=null,t='';var m=s.match(/explore\/([a-f0-9]{24})/i);if(!m)m=s.match(/discovery\/item\/([a-f0-9]{24})/i)
@@ -175,7 +183,10 @@ function fmtTime(t){if(!t)return'未知';if(typeof t=='string'&&t.includes('-'))
 
 window.copyAllIds=function(){var ids=_results.map(function(r){return r.id}).join('\n');if(!ids)return alert('无结果');var ta=document.createElement('textarea');ta.value=ids;document.body.appendChild(ta);ta.select();document.execCommand('copy');document.body.removeChild(ta);alert('✅ 已复制 '+_results.length+' 个ID')}
 
-window.exportResults=function(){if(!_results.length)return alert('无结果');var text=_results.map(function(r){return r.id+(r.nickname?' | '+r.nickname:'')+(r.src?' | '+r.src:'')}).join('\n');var a=document.createElement('a');a.href=URL.createObjectURL(new Blob([text],{type:'text/plain;charset=utf-8'}));a.download='xhs_results_'+Date.now()+'.txt';a.click();alert('✅ 已导出 '+_results.length+' 条结果')}
+window.exportResults=function(){if(!_results.length)return alert('无结果')
+var data=[['笔记ID','达人名称','来源链接']];_results.forEach(function(r){data.push([r.id||'',r.nickname||'',r.src||''])})
+var wb=XLSX.utils.book_new();var ws=XLSX.utils.aoa_to_sheet(data);XLSX.utils.book_append_sheet(wb,ws,'结果')
+XLSX.writeFile(wb,'xhs_results_'+Date.now()+'.xlsx');alert('✅ 已导出 '+_results.length+' 条结果到 Excel')}
 
 function fmtTime(t){if(!t)return'未知';if(t.includes('-'))return t;var d=new Date(t);if(isNaN(d.getTime()))return t;return d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate()+' '+d.getHours()+':'+d.getMinutes()}
 
