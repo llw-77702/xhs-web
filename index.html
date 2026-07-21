@@ -43,6 +43,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Inter','Segoe UI',sans-serif;
 .result-url a{color:var(--accent);text-decoration:none}
 .step-box{font-size:13px;color:var(--text2);line-height:1.8;padding:12px 14px;background:#f8f8fa;border-radius:8px;margin-bottom:12px}
 .step-box b{color:var(--accent)}
+.hidden{display:none!important}
 .script-box{background:#1a1a2e;color:#e94560;padding:12px;border-radius:8px;font-size:10px;font-family:Menlo,monospace;line-height:1.6;max-height:120px;overflow:auto;cursor:pointer;margin-bottom:8px}
 .footer{text-align:center;padding:20px;font-size:12px;color:var(--text3)}
 .info{font-size:12px;color:var(--text2);margin-top:6px}
@@ -73,15 +74,40 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Inter','Segoe UI',sans-serif;
 <!-- Tab 1: ID→链接 -->
 <div class="tab-content active" id="tab1">
 <section class="card">
-<div class="card-header"><h2>📝 输入笔记ID</h2><span class="hint">支持粘贴 / 导入文件，多个用逗号或换行分隔</span></div>
+<div class="card-header"><h2>📝 ID批量转链接</h2><span class="hint">粘贴或导入文件 → 批量转换 → 导出Excel</span></div>
+<div style="display:flex;gap:4px;margin-bottom:10px;background:#f8f8fa;padding:3px;border-radius:8px">
+<button class="tab2" style="flex:1;padding:7px;border:none;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;background:#fff;color:#333;box-shadow:0 1px 2px rgba(0,0,0,.08)" onclick="sw(1,this)">⚡ 本地转换</button>
+<button class="tab2" style="flex:1;padding:7px;border:none;border-radius:6px;font-size:12px;cursor:pointer;background:transparent;color:#999" onclick="sw(2,this)">🎭 广告平台脚本</button>
+</div>
+<div id="sub1">
+<textarea class="textarea" id="idInput" rows="5" placeholder="粘贴笔记ID，多个用逗号或换行分隔&#10;67a9c381000000002901324d, 66eabcde0000000012345678"></textarea>
+<div style="display:flex;align-items:center;gap:8px;margin-top:10px;flex-wrap:wrap">
+<span class="hint" id="idCount">已输入 0 个ID</span>
+<label class="file-upload">📁 导入文件<input type="file" id="idFileInput" accept=".txt,.csv,.xlsx"></label>
+<button class="btn btn-primary btn-sm" onclick="batchConvert()">🔄 批量转换</button>
+</div>
+<p class="info">💡 需要先启动本地服务，或在「提取信息」中先获取包含xsec_token的链接</p>
+</div>
+<div id="sub2" class="hidden">
 <div class="step-box">
 <b>①</b> 打开 <a href="https://ad.xiaohongshu.com/" target="_blank">ad.xiaohongshu.com</a> 登录<br>
-<b>②</b> 按 F12 → Console（控制台）<br>
-<b>③</b> 点下面代码框全选 → Ctrl+C 复制<br>
-<b>④</b> 控制台 Ctrl+V → 回车 → 弹窗中批量操作
+<b>②</b> 按 F12 → Console<br>
+<b>③</b> 点下面代码框全选 → Ctrl+C<br>
+<b>④</b> 控制台 Ctrl+V → 回车 → 弹窗中粘贴ID批量转换
 </div>
 <div class="script-box" onclick="sel(this)"></div>
-<p class="info">👆 代码框中的脚本支持批量：粘贴多个ID（逗号或换行分隔）→ 点转换 → 所有链接一键导出</p>
+<p class="info">👆 支持批量：粘贴多个ID → 点转换 → 所有链接一键复制</p>
+</div>
+</section>
+<section class="card" id="idResultCard" style="display:none">
+<div class="card-header"><h2>✅ 转换结果</h2>
+<div style="display:flex;gap:6px">
+<button class="btn btn-secondary btn-sm" onclick="copyIdUrls()">📋 复制全部链接</button>
+<button class="btn btn-secondary btn-sm" onclick="exportIdResults()">📥 导出Excel</button>
+</div>
+</div>
+<div id="idResultList"></div>
+<div id="idStatsCard"></div>
 </section>
 </div>
 
@@ -100,7 +126,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Inter','Segoe UI',sans-serif;
 <div class="card-header"><h2>✅ 提取结果</h2>
 <div style="display:flex;gap:6px">
 <button class="btn btn-secondary btn-sm" onclick="copyAllIds()">📋 复制全部ID</button>
-<button class="btn btn-secondary btn-sm" onclick="exportResults()">📥 导出TXT</button>
+<button class="btn btn-secondary btn-sm" onclick="exportResults()">📥 导出Excel</button>
 </div>
 </div>
 <div id="resultList2"></div>
@@ -110,7 +136,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Inter','Segoe UI',sans-serif;
 
 </main>
 
-<footer class="footer"><p>仅供内部使用 · 支持批量导入.txt文件 · 批量导出结果</p></footer>
+<footer class="footer"><p>仅供内部使用 · 支持批量导入 .txt/.csv/.xlsx · 导出 .xlsx 结果</p></footer>
 </div>
 
 <script>
@@ -122,8 +148,37 @@ function sel(e){var r=document.createRange();r.selectNodeContents(e);var s=windo
 function switchTab(n,el){
 document.querySelectorAll('.tab').forEach(function(t){t.classList.remove('active')});el.classList.add('active')
 document.getElementById('tab1').classList.toggle('active',n===1);document.getElementById('tab2').classList.toggle('active',n===2)
-document.getElementById('resultCard').style.display='none'
+document.getElementById('idResultCard').style.display='none'
+document.getElementById('resultCard2').style.display='none'
 }
+
+function sw(n,el){
+el.parentElement.querySelectorAll('.tab2').forEach(function(t){t.style.background='transparent';t.style.color='#999';t.style.boxShadow='none'});
+el.style.background='#fff';el.style.color='#333';el.style.boxShadow='0 1px 2px rgba(0,0,0,.08)';
+document.getElementById('sub1').classList.toggle('hidden',n!==1);document.getElementById('sub2').classList.toggle('hidden',n!==2)
+}
+
+// ID输入计数
+document.getElementById('idInput').addEventListener('input',function(){
+document.getElementById('idCount').textContent='已输入 '+this.value.split(/[,\n]+/).filter(function(x){return x.trim()}).length+' 个ID'})
+
+// ID文件导入
+document.getElementById('idFileInput').addEventListener('change',function(e){
+var f=e.target.files[0];if(!f)return;var ext=f.name.split('.').pop().toLowerCase();
+if(ext==='xlsx'){
+var reader=new FileReader();reader.onload=function(ev){
+var data=new Uint8Array(ev.target.result);var wb=XLSX.read(data,{type:'array'});var ws=wb.Sheets[wb.SheetNames[0]];var a=XLSX.utils.sheet_to_json(ws,{header:1});
+var ids=[];a.forEach(function(r){r.forEach(function(c){if(c&&c.toString().trim())ids.push(c.toString().trim())})});
+if(!ids.length){alert('文件为空');return}
+document.getElementById('idInput').value=ids.join('\n');document.getElementById('idCount').textContent='已输入 '+ids.length+' 个ID';alert('✅ 导入 '+ids.length+' 个ID')
+};reader.readAsArrayBuffer(f)
+}else{
+var reader=new FileReader();reader.onload=function(ev){
+var ids=ev.target.result.split(/[,\n]+/).map(function(x){return x.trim()}).filter(Boolean);
+if(!ids.length){alert('文件为空');return}
+document.getElementById('idInput').value=ids.join('\n');document.getElementById('idCount').textContent='已输入 '+ids.length+' 个ID';alert('✅ 导入 '+ids.length+' 个ID')
+};reader.readAsText(f)}
+})
 
 document.getElementById('input').addEventListener('input',function(){
 document.getElementById('count').textContent='已输入 '+this.value.split(/[,\n]+/).filter(function(x){return x.trim()}).length+' 条'})
@@ -191,6 +246,54 @@ XLSX.writeFile(wb,'xhs_results_'+Date.now()+'.xlsx');alert('✅ 已导出 '+_res
 function fmtTime(t){if(!t)return'未知';if(t.includes('-'))return t;var d=new Date(t);if(isNaN(d.getTime()))return t;return d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate()+' '+d.getHours()+':'+d.getMinutes()}
 
 window.copyAll=function(){var ids=_results.map(function(r){return r.id}).join('\n');if(!ids){alert('无结果');return};var ta=document.createElement('textarea');ta.value=ids;document.body.appendChild(ta);ta.select();document.execCommand('copy');document.body.removeChild(ta);alert('✅ 已复制 '+_results.length+' 个ID')}
+
+// ========== ID→链接 批量转换 ==========
+var SERVER='http://localhost:5001';var _idResults=[]
+function batchConvert(){
+var raw=document.getElementById('idInput').value;var ids=raw.split(/[,\n]+/).map(function(x){return x.trim()}).filter(Boolean)
+if(!ids.length)return alert('请输入笔记ID')
+var list=document.getElementById('idResultList'),card=document.getElementById('idResultCard'),stats=document.getElementById('idStatsCard')
+_idResults=[];list.innerHTML='';card.style.display='';stats.innerHTML=''
+
+// 分批请求（每批50个）
+var batchSize=50,done=0
+for(var i=0;i<ids.length;i+=batchSize){
+var batch=ids.slice(i,i+batchSize);done+=batch.length
+fetch(SERVER+'/api/convert_with_cookie',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({noteIds:batch.join(','),cookie:''})})
+.then(function(r){return r.json()}).then(function(res){
+if(res.success&&res.results){res.results.forEach(function(r){
+var cls=r.success?'ok':'err'
+var item=document.createElement('div');item.className='result-item '+cls
+item.innerHTML='<div style=\"font-size:18px\">'+(r.success?'✅':'❌')+'</div><div class=\"result-content\"><div class=\"result-id\">'+r.id+'</div><div class=\"result-url\">'+(r.url?('<a href=\"'+r.url+'\" target=\"_blank\">'+r.url+'</a>'):'获取失败')+'</div></div>'
+list.appendChild(item);if(r.success)_idResults.push({id:r.id,url:r.url})
+})}else{
+// 如果是Cookie过期，显示错误
+var errMsg=res.error||res.message||'请求失败'
+var item=document.createElement('div');item.className='result-item err'
+item.innerHTML='<div style=\"font-size:18px\">❌</div><div class=\"result-content\"><div class=\"result-id\">错误: '+errMsg+'</div><div class=\"result-url\">需要先在「提取笔记信息」中获取有效的xsec_token，或启动本地服务</div></div>'
+list.appendChild(item)
+}}).catch(function(e){
+list.innerHTML='<div class=\"result-item err\"><div style=\"font-size:18px\">❌</div><div class=\"result-content\"><div class=\"result-id\">请求失败</div><div class=\"result-url\">'+e.message+'</div></div>'
+}).then(function(){
+if(done>=ids.length){
+var ok=_idResults.length;var fail=ids.length-ok
+stats.innerHTML='<div class=\"stats-grid\"><div class=\"stat-item\"><div class=\"stat-value\">'+ok+'</div><div class=\"stat-label\">✅ 成功</div></div><div class=\"stat-item\"><div class=\"stat-value\">'+fail+'</div><div class=\"stat-label\">❌ 失败</div></div><div class=\"stat-item\"><div class=\"stat-value\">'+ids.length+'</div><div class=\"stat-label\">📊 总计</div></div></div>'
+}})
+}}
+
+window.copyIdUrls=function(){
+var urls=_idResults.map(function(r){return r.url}).join('\n')
+if(!urls)return alert('无结果')
+var ta=document.createElement('textarea');ta.value=urls;document.body.appendChild(ta);ta.select();document.execCommand('copy');document.body.removeChild(ta)
+alert('✅ 已复制 '+_idResults.length+' 个链接')
+}
+
+window.exportIdResults=function(){
+if(!_idResults.length)return alert('无结果')
+var data=[['笔记ID','分享链接']];_idResults.forEach(function(r){data.push([r.id,r.url])})
+var wb=XLSX.utils.book_new();var ws=XLSX.utils.aoa_to_sheet(data);XLSX.utils.book_append_sheet(wb,ws,'链接')
+XLSX.writeFile(wb,'xhs_links_'+Date.now()+'.xlsx');alert('✅ 已导出 '+_idResults.length+' 条链接到 Excel')
+}
 </script>
 </body>
 </html>
