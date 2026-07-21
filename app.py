@@ -215,6 +215,52 @@ def parse_ids(raw):
     ]
 
 
+def get_note_info_from_explore(note_id, xsec_token):
+    """从小红书笔记页面提取笔记信息"""
+    url = f"https://www.xiaohongshu.com/explore/{note_id}?xsec_token={xsec_token}"
+    headers = {
+        "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36",
+        "Cookie": "xsecappid=aurora-shell",
+    }
+    try:
+        resp = httpx.get(url, headers=headers, timeout=15, follow_redirects=True)
+        resp.raise_for_status()
+        html = resp.text
+
+        import re, json
+        m = re.search(r'window\.__INITIAL_STATE__\s*=\s*({.*?})\s*</script>', html, re.DOTALL)
+        if not m:
+            return None, "未找到笔记数据"
+
+        js = m.group(1).replace('undefined', 'null')
+        data = json.loads(js)
+
+        note_map = data.get('note', {}).get('noteDetailMap', {})
+        for nid, info in note_map.items():
+            n = info.get('note', {})
+            user = n.get('user', {}) or {}
+            ts = n.get('time', 0)
+            from datetime import datetime
+            if ts and ts > 1000000000000:  # 毫秒时间戳
+                dt = datetime.fromtimestamp(ts / 1000)
+                time_str = dt.strftime('%Y-%m-%d %H:%M:%S')
+            else:
+                time_str = "未知"
+
+            return {
+                "id": nid,
+                "nickname": user.get('nickname', '未知'),
+                "userId": user.get('userId', ''),
+                "time": time_str,
+                "title": n.get('title', ''),
+                "desc": n.get('desc', '')[:100],
+            }, None
+
+        return None, "未找到笔记详情"
+    except Exception as e:
+        return None, str(e)
+
+
 # ========== 页面路由 ==========
 @app.route("/")
 def index():
@@ -315,6 +361,24 @@ def api_manual_cookie():
     if save_cookie_to_db(cookie):
         return jsonify({"success": True, "message": "Cookie 已保存"})
     return jsonify({"success": False, "error": "保存失败，请检查数据库连接"})
+
+
+@app.route("/api/note_info", methods=["POST"])
+def api_note_info():
+    """获取笔记详情（达人名称、发布时间等）"""
+    data = request.get_json()
+    note_id = data.get("noteId", "").strip()
+    xsec_token = data.get("xsecToken", "").strip()
+
+    if not note_id:
+        return jsonify({"success": False, "error": "缺少笔记ID"})
+    if not xsec_token:
+        return jsonify({"success": False, "error": "缺少 xsec_token，无法访问笔记页面"})
+
+    info, err = get_note_info_from_explore(note_id, xsec_token)
+    if err:
+        return jsonify({"success": False, "error": err})
+    return jsonify({"success": True, "data": info})
 
 
 # ========== 启动 ==========

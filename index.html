@@ -3,131 +3,177 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>🍠 小红书 链接↔ID 互转</title>
+<title>🍠 小红书笔记工具</title>
 <style>
-body{font-family:-apple-system,'PingFang SC',sans-serif;background:linear-gradient(135deg,#667eea,#764ba2);min-height:100vh;padding:16px;margin:0}
-.wrap{max-width:600px;margin:0 auto}
-h1{text-align:center;color:#fff;font-size:24px;margin-bottom:4px}
-.sub{text-align:center;color:rgba(255,255,255,.8);font-size:14px;margin-bottom:16px}
-.box{background:#fff;border-radius:14px;padding:20px;margin-bottom:12px;box-shadow:0 5px 20px rgba(0,0,0,.15)}
-.box h2{font-size:16px;margin:0 0 8px;color:#333}
-.box p{font-size:13px;color:#888;margin:0 0 8px;line-height:1.6}
-textarea{width:100%;padding:10px;border:2px solid #ddd;border-radius:8px;font-size:13px;font-family:Menlo,monospace;min-height:70px;resize:vertical;box-sizing:border-box}
-textarea:focus{outline:none;border-color:#667eea}
-.btn{display:block;width:100%;padding:12px;border:none;border-radius:8px;font-size:15px;font-weight:600;cursor:pointer;margin-top:8px;text-align:center}
-.btn-p{background:linear-gradient(135deg,#667eea,#764ba2);color:#fff}
-.btn-red{background:#fe2c55;color:#fff}
-.btn-gray{background:#eee;color:#333;font-size:13px}
-.lk{background:#f0fff4;padding:10px;border-radius:8px;margin-bottom:6px}
-.lk .id{font-size:18px;font-weight:bold;color:#333}
-.lk .src{font-size:11px;color:#aaa;word-break:break-all;margin:2px 0}
-.cpbtn{border:none;background:#27ae60;color:#fff;padding:4px 12px;border-radius:6px;font-size:12px;cursor:pointer}
-.cpbtn:active{background:#219a52}
-.er{color:#e74c3c;font-size:13px;padding:10px;background:#fff0f0;border-radius:8px;margin-bottom:6px}
-.script-box{background:#1a1a2e;color:#e94560;padding:12px;border-radius:8px;font-size:11px;font-family:Menlo,monospace;line-height:1.5;margin:8px 0;max-height:150px;overflow:auto;word-break:break-all}
-.step-box{background:#f0f4ff;padding:12px;border-radius:8px;margin-bottom:8px;font-size:14px;line-height:1.7}
-.step-num{display:inline-block;width:20px;height:20px;background:#667eea;color:#fff;border-radius:50%;text-align:center;font-size:11px;line-height:20px;font-weight:bold}
-.count{font-size:12px;color:#aaa;margin-top:2px}
-.footer{text-align:center;color:rgba(255,255,255,.5);font-size:11px;margin-top:12px}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,'PingFang SC','Microsoft YaHei',sans-serif;background:linear-gradient(135deg,#fe2c55 0%,#ff6b8a 100%);min-height:100vh;padding:16px}
+.wrap{max-width:560px;margin:0 auto}
+h1{text-align:center;color:#fff;font-size:22px;margin-bottom:2px}
+.sub{text-align:center;color:rgba(255,255,255,.85);font-size:13px;margin-bottom:14px}
+.box{background:#fff;border-radius:14px;padding:20px;margin-bottom:12px;box-shadow:0 4px 16px rgba(0,0,0,.12)}
+.box h2{font-size:15px;margin-bottom:8px;color:#333}
+.box p{font-size:12px;color:#999;line-height:1.6}
+textarea{width:100%;padding:10px;border:2px solid #eee;border-radius:8px;font-size:13px;font-family:Menlo,monospace;min-height:60px;resize:vertical}
+textarea:focus{outline:none;border-color:#fe2c55}
+.btn{display:block;width:100%;padding:11px;border:none;border-radius:8px;font-size:15px;font-weight:600;cursor:pointer;text-align:center}
+.btn-red{background:#fe2c55;color:#fff}.btn-red:hover{background:#e9254a}
+.btn-purple{background:#667eea;color:#fff}
+.btn-gray{background:#f5f5f5;color:#333}
+.btn-sm{display:inline-block;width:auto;padding:6px 14px;font-size:12px;border-radius:6px}
+.result-card{padding:10px 12px;border-radius:8px;margin-bottom:8px;background:#f8f8f8;font-size:13px;line-height:1.7}
+.result-card.ok{background:#f0fff4}
+.result-card.warn{background:#fff8e6}
+.result-card.err{background:#fff0f0}
+.result-card .label{font-size:11px;color:#999}
+.result-card .val{font-weight:600;color:#333}
+.result-card .val-link{color:#fe2c55;word-break:break-all;text-decoration:none}
+.footer{text-align:center;color:rgba(255,255,255,.5);font-size:10px;margin-top:10px}
+.step{background:#fff;border-radius:10px;padding:14px;margin-bottom:10px;font-size:13px;line-height:1.8}
+.step b{color:#fe2c55}
+.snum{display:inline-block;width:18px;height:18px;background:#fe2c55;color:#fff;border-radius:50%;text-align:center;font-size:10px;line-height:18px;font-weight:bold;margin-right:4px}
+.script-box{background:#1a1a2e;color:#e94560;padding:12px;border-radius:8px;font-size:11px;font-family:Menlo,monospace;max-height:140px;overflow:auto;word-break:break-all;cursor:pointer}
+.count{font-size:11px;color:#bbb;margin-top:3px}
+.hint{font-size:11px;color:#aaa;margin-top:6px}
+.hidden{display:none}
 </style>
 </head>
 <body>
 <div class="wrap">
-<h1>🍠 小红书链接工具</h1>
-<p class="sub">链接↔ID 互转</p>
+<h1>🍠 小红书笔记工具</h1>
+<p class="sub">链接提取 · ID转链接 · 达人信息</p>
 
-<!-- ========== 功能一：链接→ID ========== -->
+<!-- ========== 链接 → 提取信息 ========== -->
 <div class="box">
-<h2>🔗 链接 → ID</h2>
-<p>粘贴小红书分享链接，自动提取笔记 ID，<b>不需要任何登录</b></p>
-<textarea id="urlInput" placeholder="粘贴长链接，多个用逗号或换行分隔&#10;例如：https://www.xiaohongshu.com/explore/67a9c381000000002901324d?xsec_token=xxx"></textarea>
-<div class="count" id="urlCount">已输入 0 个链接</div>
-<button class="btn btn-p" onclick="extractIds()">🔍 提取 ID</button>
-<div id="urlResult"></div>
+<h2>🔗 提取笔记信息</h2>
+<p>粘贴链接，提取笔记ID、达人名称、发布时间</p>
+<textarea id="linkInput" placeholder="粘贴小红书笔记链接&#10;https://www.xiaohongshu.com/explore/..."></textarea>
+<div class="count" id="linkCount">已输入 0 条</div>
+<button class="btn btn-red" onclick="extractAll()">🔍 提取</button>
+<div id="linkResult"></div>
 </div>
 
-<!-- ========== 功能二：ID→链接 ========== -->
+<!-- ========== ID → 链接 ========== -->
 <div class="box">
-<h2>📝 ID → 链接</h2>
-<p>需要在小红书广告平台（ad.xiaohongshu.com）中运行</p>
-
-<div class="step-box">
-<span class="step-num">1</span> 打开 <b>ad.xiaohongshu.com</b> 并登录<br>
-<span class="step-num">2</span> 按 <b>F12</b> → 点击 <b>Console</b>（控制台）<br>
-<span class="step-num">3</span> 选中下面框里的全部代码，按 <b>Ctrl+C</b> 复制<br>
-<span class="step-num">4</span> 在控制台中按 <b>Ctrl+V</b> 粘贴，按回车
+<h2>📝 笔记ID → 链接</h2>
+<p>需要在小红书广告平台页面中运行脚本</p>
+<div class="step">
+<span class="snum">1</span> 打开 <a href="https://ad.xiaohongshu.com/" target="_blank"><b>ad.xiaohongshu.com</b></a> 并登录<br>
+<span class="snum">2</span> 按 <b>F12</b> → <b>Console</b>（控制台）<br>
+<span class="snum">3</span> 点击下方代码框（自动全选）→ <b>Ctrl+C</b><br>
+<span class="snum">4</span> 在控制台按 <b>Ctrl+V</b> → <b>回车</b>
+</div>
+<div class="script-box" onclick="selText(this)"></div>
+<p class="hint">💡 点击代码框自动全选 → Ctrl+C 复制</p>
 </div>
 
-<div class="script-box" id="scriptText" onclick="selectText(this)">(function(){if(document.getElementById('xhs_box'))return alert('已打开!');var d=document.createElement('div');d.id='xhs_box';d.style.cssText='position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:99999;background:#fff;border-radius:14px;padding:20px;box-shadow:0 10px 40px rgba(0,0,0,.3);width:520px;max-width:90vw;font-family:-apple-system,sans-serif;';d.innerHTML='<h2 style="margin:0 0 10px;font-size:18px">🍠 笔记ID转链接</h2><textarea id="xhs_in" style="width:100%;padding:10px;border:2px solid #ddd;border-radius:8px;font-size:14px;min-height:80px;font-family:monospace" placeholder="粘贴笔记ID，多个用逗号分隔"></textarea><div style="margin:4px 0 6px;font-size:12px;color:#999" id="xhs_cnt">已输入 0 个ID</div><button onclick="xhs_run()" style="width:100%;padding:12px;border:none;border-radius:8px;background:#fe2c55;color:#fff;font-size:16px;font-weight:600;cursor:pointer">🔗 转换</button><div id="xhs_out" style="margin-top:10px;max-height:350px;overflow-y:auto;font-size:14px"></div><button onclick="this.parentElement.remove()" style="position:absolute;top:8px;right:12px;border:none;background:none;font-size:24px;cursor:pointer">×</button>';document.body.appendChild(d);var i=document.getElementById('xhs_in');i.oninput=function(){document.getElementById('xhs_cnt').textContent='已输入 '+this.value.split(/[,\\\n]+/).filter(function(n){return n.trim()}).length+' 个ID'};window.xhs_run=function(){var v=document.getElementById('xhs_in').value,ids=v.split(/[,\\\n]+/).map(function(n){return n.trim()}).filter(Boolean),o=document.getElementById('xhs_out');if(!ids.length)return alert('请输入ID');fetch('/api/light/note/token',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({noteIds:ids,source:'pc_ad'})}).then(function(r){return r.json()}).then(function(j){if(j.code==0&&j.data){o.innerHTML=ids.map(function(id){var t=typeof j.data[id]=='string'?j.data[id]:(j.data[id]&&j.data[id].xsec_token?j.data[id].xsec_token:'');if(t){var u='https://www.xiaohongshu.com/explore/'+id+'?xsec_token='+t;return '<div style="padding:10px;border-radius:8px;background:#f0fff4;margin-bottom:6px"><div style="font-size:12px;color:#999">'+id+'</div><div style="word-break:break-all;font-size:13px;color:#fe2c55"><a href="'+u+'" target="_blank" style="color:#fe2c55;text-decoration:none">'+u+'</a></div><button onclick="navigator.clipboard.writeText(\\\''+u+'\\\');this.textContent=\\\'✅ 已复制\\\'" style="border:none;background:#fe2c55;color:#fff;padding:4px 10px;border-radius:6px;font-size:12px;cursor:pointer;margin-top:4px">📋 复制</button></div>'}return '<div style="padding:10px;border-radius:8px;background:#fff0f0;margin:6px 0;color:#e74c3c">❌'+id+' 获取失败</div>'}).join('')}else o.innerHTML='<div style="color:#e74c3c">错误:'+(j.msg||'未知')+'</div>'}).catch(function(e){o.innerHTML='<div style="color:#e74c3c">请求失败:'+e.message+'</div>'})}})()</div>
-<p style="font-size:12px;color:#999;margin-top:6px">💡 点击上方代码框全选 → Ctrl+C 复制 → F12 控制台 → Ctrl+V → 回车</p>
-</div>
-
-<div class="footer">仅供内部使用</div>
+<div class="footer">数据来自小红书开放页面，仅供内部使用</div>
 </div>
 
 <script>
-// 脚本（在广告平台控制台运行）
-var SCRIPT = `(function(){if(document.getElementById('xhs_box'))return alert('已打开!');var d=document.createElement('div');d.id='xhs_box';d.style.cssText='position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:99999;background:#fff;border-radius:14px;padding:20px;box-shadow:0 10px 40px rgba(0,0,0,.3);width:520px;max-width:90vw;font-family:-apple-system,sans-serif;';d.innerHTML='<h2 style="margin:0 0 10px;font-size:18px">🍠 笔记ID转链接</h2><textarea id="xhs_in" style="width:100%;padding:10px;border:2px solid #ddd;border-radius:8px;font-size:14px;min-height:80px;font-family:monospace" placeholder="粘贴笔记ID，多个用逗号分隔"></textarea><div style="margin:4px 0 6px;font-size:12px;color:#999" id="xhs_cnt">已输入 0 个ID</div><button onclick="xhs_run()" style="width:100%;padding:12px;border:none;border-radius:8px;background:#fe2c55;color:#fff;font-size:16px;font-weight:600;cursor:pointer">🔗 转换</button><div id="xhs_out" style="margin-top:10px;max-height:350px;overflow-y:auto;font-size:14px"></div><button onclick="this.parentElement.remove()" style="position:absolute;top:8px;right:12px;border:none;background:none;font-size:24px;cursor:pointer">×</button>';document.body.appendChild(d);var i=document.getElementById('xhs_in');i.oninput=function(){document.getElementById('xhs_cnt').textContent='已输入 '+this.value.split(/[,\\\n]+/).filter(function(n){return n.trim()}).length+' 个ID'};window.xhs_run=function(){var v=document.getElementById('xhs_in').value,ids=v.split(/[,\\\n]+/).map(function(n){return n.trim()}).filter(Boolean),o=document.getElementById('xhs_out');if(!ids.length)return alert('请输入ID');fetch('/api/light/note/token',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({noteIds:ids,source:'pc_ad'})}).then(function(r){return r.json()}).then(function(j){if(j.code==0&&j.data){o.innerHTML=ids.map(function(id){var t=typeof j.data[id]=='string'?j.data[id]:(j.data[id]&&j.data[id].xsec_token?j.data[id].xsec_token:'');if(t){var u='https://www.xiaohongshu.com/explore/'+id+'?xsec_token='+t;return '<div style="padding:10px;border-radius:8px;background:#f0fff4;margin-bottom:6px"><div style="font-size:12px;color:#999">'+id+'</div><div style="word-break:break-all;font-size:13px;color:#fe2c55"><a href="'+u+'" target="_blank" style="color:#fe2c55;text-decoration:none">'+u+'</a></div><button onclick="navigator.clipboard.writeText(\\\''+u+'\\\');this.textContent=\\\'✅ 已复制\\\'" style="border:none;background:#fe2c55;color:#fff;padding:4px 10px;border-radius:6px;font-size:12px;cursor:pointer;margin-top:4px">📋 复制</button></div>'}return '<div style="padding:10px;border-radius:8px;background:#fff0f0;margin:6px 0;color:#e74c3c">❌'+id+' 获取失败</div>'}).join('')}else o.innerHTML='<div style="color:#e74c3c">错误:'+(j.msg||'未知')+'</div>'}).catch(function(e){o.innerHTML='<div style="color:#e74c3c">请求失败:'+e.message+'</div>'})}})()`;
+var SCRIPT="(function(){if(document.getElementById('xhs_b'))return;var d=document.createElement('div');d.id='xhs_b';d.style.cssText='position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:99999;background:#fff;border-radius:14px;padding:20px;box-shadow:0 10px 40px rgba(0,0,0,.3);width:520px;max-width:90vw;font-family:-apple-system,sans-serif;';d.innerHTML='<h2 style=\"margin:0 0 10px;font-size:18px\">🍠 笔记ID转链接</h2><textarea id=\"xi\" style=\"width:100%;padding:10px;border:2px solid #ddd;border-radius:8px;font-size:14px;min-height:80px;font-family:monospace\" placeholder=\"粘贴笔记ID，多个用逗号分隔\"></textarea><div style=\"margin:4px 0 6px;font-size:12px;color:#999\" id=\"xc\">已输入 0 个ID</div><button onclick=\"xr()\" style=\"width:100%;padding:12px;border:none;border-radius:8px;background:#fe2c55;color:#fff;font-size:16px;font-weight:600;cursor:pointer\">🔗 转换</button><div id=\"xo\" style=\"margin-top:10px;max-height:350px;overflow-y:auto;font-size:14px\"></div><button onclick=\"this.parentElement.remove()\" style=\"position:absolute;top:8px;right:12px;border:none;background:none;font-size:24px;cursor:pointer\">×</button>';document.body.appendChild(d);var i=document.getElementById('xi');i.oninput=function(){document.getElementById('xc').textContent='已输入 '+this.value.split(/[,\\\n]+/).filter(function(n){return n.trim()}).length+' 个ID'};window.xr=function(){var v=document.getElementById('xi').value,ids=v.split(/[,\\\n]+/).map(function(n){return n.trim()}).filter(Boolean),o=document.getElementById('xo');if(!ids.length)return alert('请输入ID');fetch('/api/light/note/token',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({noteIds:ids,source:'pc_ad'})}).then(function(r){return r.json()}).then(function(j){if(j.code==0&&j.data){o.innerHTML=ids.map(function(id){var t=typeof j.data[id]=='string'?j.data[id]:(j.data[id]&&j.data[id].xsec_token?j.data[id].xsec_token:'');if(t){var u='https://www.xiaohongshu.com/explore/'+id+'?xsec_token='+t;return '<div style=\"padding:8px;border-radius:8px;background:#f0fff4;margin-bottom:6px\"><div style=\"font-size:12px;color:#999\">'+id+'</div><div style=\"word-break:break-all;font-size:13px;color:#fe2c55\"><a href=\"'+u+'\" target=\"_blank\" style=\"color:#fe2c55;text-decoration:none\">'+u+'</a></div><button onclick=\"navigator.clipboard.writeText(\\''+u+'\\\');this.textContent=\\\'✅ 复制成功\\'\" style=\"border:none;background:#fe2c55;color:#fff;padding:4px 10px;border-radius:6px;font-size:12px;cursor:pointer;margin-top:4px\">📋 复制</button></div>'}return '<div style=\"padding:8px;border-radius:8px;background:#fff0f0;margin:6px 0;color:#e74c3c\">❌'+id+' 获取失败</div>'}).join('')}else o.innerHTML='<div style=\"color:#e74c3c\">错误:'+(j.msg||'请检查Cookie')+'</div>'}).catch(function(e){o.innerHTML='<div style=\"color:#e74c3c\">请求失败:'+e.message+'</div>'})}})()";
 
-function selectText(el) {
-    var range = document.createRange();
-    range.selectNodeContents(el);
-    var sel = window.getSelection();
-    sel.removeAllRanges();
-    sel.addRange(range);
-}
+document.querySelector('.script-box').textContent = SCRIPT;
 
-// 链接→ID
-document.getElementById('urlInput').addEventListener('input', function() {
-    document.getElementById('urlCount').textContent = '已输入 ' + this.value.split(/[,\n]+/).filter(n => n.trim()).length + ' 个链接';
+document.getElementById('linkInput').addEventListener('input', function(){
+    var n = this.value.split(/[,\n]+/).filter(function(x){return x.trim()}).length;
+    document.getElementById('linkCount').textContent = '已输入 '+n+' 条';
 });
 
-function extractIds() {
-    var raw = document.getElementById('urlInput').value;
-    var items = raw.split(/[,\n]+/).map(function(n) { return n.trim(); }).filter(Boolean);
-    if (!items.length) return alert('请输入链接');
+function selText(el){var r=document.createRange();r.selectNodeContents(el);var s=window.getSelection();s.removeAllRanges();s.addRange(r)}
 
-    var results = items.map(function(s) {
-        var m = s.match(/explore\/([a-f0-9]{24})/i);
-        var id = m ? m[1] : null;
-        if (!id) id = s.match(/discovery\/item\/([a-f0-9]{24})/i);
-        if (!id && /^[a-f0-9]{24}$/i.test(s.trim())) id = s.trim();
-        if (!id) id = s.match(/[?&]note_id=([a-f0-9]{24})/i);
-        return { id: id, src: s };
-    });
-
-    var html = '';
-    var ok = 0, fail = 0;
-    results.forEach(function(r) {
-        if (r.id) {
-            ok++;
-            html += '<div class="lk"><div class="id">✅ ' + r.id + '</div><div class="src">' + r.src + '</div></div>';
-        } else {
-            fail++;
-            html += '<div class="er">❌ 无法识别：' + r.src + '</div>';
-        }
-    });
-
-    if (ok + fail > 0) {
-        html += '<div style="text-align:center;margin-top:8px;font-size:13px;color:#888">成功 ' + ok + ' 个，失败 ' + fail + ' 个</div>';
-        // 把提取到的ID汇总到一起，方便复制
-        var allIds = results.filter(function(r){return r.id}).map(function(r){return r.id}).join('\n');
-        if (allIds) {
-            html += '<div style="margin-top:8px;background:#f5f5f5;padding:8px;border-radius:8px;font-size:13px;font-family:monospace;word-break:break-all">' + allIds + '</div>';
-            html += '<p style="font-size:12px;color:#999;margin-top:2px">👆 选中上面文字，Ctrl+C 复制</p>';
-        }
-    }
-    document.getElementById('urlResult').innerHTML = html;
+// 解析URL，提取 noteId 和 xsec_token
+function parseUrl(s) {
+    var id = null, token = '';
+    var m1 = s.match(/explore\/([a-f0-9]{24})/i);
+    var m2 = s.match(/discovery\/item\/([a-f0-9]{24})/i);
+    id = m1 ? m1[1] : (m2 ? m2[1] : (/^[a-f0-9]{24}$/i.test(s.trim()) ? s.trim() : null));
+    if (!id) return null;
+    var mt = s.match(/xsec_token=([^&]+)/);
+    token = mt ? mt[1] : '';
+    return {id: id, token: token};
 }
 
-window.copyId = function(id, btn) {
-    var ta = document.createElement('textarea');
-    ta.value = id;
-    document.body.appendChild(ta);
-    ta.select();
-    document.execCommand('copy');
-    document.body.removeChild(ta);
-    btn.textContent = '✅ 已复制';
+// 格式化时间戳
+function fmtTime(ts) {
+    if (!ts) return '未知';
+    var d = new Date(typeof ts === 'string' && ts.includes('-') ? ts : Number(ts));
+    if (isNaN(d.getTime())) return ts;
+    var pad = function(n){return n<10?'0'+n:n};
+    return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate())+' '+pad(d.getHours())+':'+pad(d.getMinutes());
+}
+
+function extractAll() {
+    var raw = document.getElementById('linkInput').value;
+    var items = raw.split(/[,\n]+/).map(function(x){return x.trim()}).filter(Boolean);
+    if (!items.length) return alert('请输入链接');
+
+    var results = [];
+    var html = '';
+    var serverUrl = 'http://localhost:5001';
+
+    var pending = 0;
+    var total = 0;
+
+    items.forEach(function(item) {
+        var p = parseUrl(item);
+        if (!p) {
+            html += '<div class="result-card err"><span class="val">❌ 无法识别: '+item+'</span></div>';
+            total++;
+            if (total === items.length) showResult(html);
+            return;
+        }
+
+        total++;
+        pending++;
+        var cardId = 'card_' + p.id;
+
+        html += '<div class="result-card ok" id="'+cardId+'"><div class="label">笔记ID</div><div class="val" style="font-size:16px;margin:2px 0">'+p.id+'</div><div class="label" style="margin-top:6px">达人名称</div><div class="val" id="'+cardId+'_name">⏳ 加载中...</div><div class="label" style="margin-top:4px">发布时间</div><div class="val" id="'+cardId+'_time">⏳</div></div>';
+
+        if (total === items.length) showResult(html);
+
+        // 尝试获取详情
+        if (p.token) {
+            fetch(serverUrl + '/api/note_info', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({noteId: p.id, xsecToken: p.token}),
+            }).then(function(r){return r.json()}).then(function(res){
+                pending--;
+                if (res.success && res.data) {
+                    var nameEl = document.getElementById(cardId+'_name');
+                    var timeEl = document.getElementById(cardId+'_time');
+                    if (nameEl) nameEl.textContent = res.data.nickname || '未知';
+                    if (timeEl) timeEl.textContent = fmtTime(res.data.time);
+                } else {
+                    var el = document.getElementById(cardId);
+                    if (el) el.innerHTML += '<div class="hint">⚠️ '+ (res.error||'详情加载失败，需启动本地服务') +'</div>';
+                }
+            }).catch(function(){
+                pending--;
+            });
+        } else {
+            pending--;
+            setTimeout(function(){
+                var el = document.getElementById(cardId);
+                if (el) el.innerHTML += '<div class="hint">⚠️ 链接中无xsec_token，无法获取详情</div>';
+            }, 100);
+        }
+    });
+}
+
+function showResult(html) {
+    var div = document.getElementById('linkResult');
+    div.innerHTML = html + '<div style="text-align:center"><button class="btn btn-gray btn-sm" style="margin-top:4px" onclick="copyAllIds()">📋 复制全部ID</button></div>';
+}
+
+window.copyAllIds = function(){
+    var items = document.getElementById('linkInput').value.split(/[,\n]+/).map(function(x){return x.trim()}).filter(Boolean);
+    var ids = items.map(function(s){var p=parseUrl(s);return p?p.id:''}).filter(Boolean).join('\n');
+    if(!ids){alert('没有可复制的ID');return}
+    var ta=document.createElement('textarea');ta.value=ids;document.body.appendChild(ta);ta.select();
+    try{document.execCommand('copy');alert('✅ 已复制 '+ids.split('\\n').length+' 个ID')}
+    catch(e){alert('复制失败，请手动选择复制');document.body.removeChild(ta)}
+    if(ta.parentNode)document.body.removeChild(ta);
 };
 </script>
 </body>
