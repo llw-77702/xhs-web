@@ -200,12 +200,14 @@ var f=e.target.files[0];if(!f)return;readFile(f,function(ids){if(!ids.length)ret
 document.getElementById('idInput').value=ids.join('\n');document.getElementById('idCount').textContent='已输入 '+ids.length+' 个ID';alert('✅ 导入 '+ids.length+' 个ID')})})
 
 // ==== 下载上传模版 ====
+function dlIdTemplate(){
+var wb=XLSX.utils.book_new()
+XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet([['笔记ID'],['6a5740c000000000702dbd2'],['6a59db39000000001101e9a6'],['6a59f994000000001302f5ef']]),'笔记ID')
+XLSX.writeFile(wb,'xhs_ids_template.xlsx')}
 function dlTemplate(){
 var wb=XLSX.utils.book_new()
-var s1=XLSX.utils.aoa_to_sheet([['笔记ID'],['6a5740c000000000702dbd2'],['6a59db39000000001101e9a6']]);XLSX.utils.book_append_sheet(wb,s1,'笔记ID')
-var s2=XLSX.utils.aoa_to_sheet([['链接'],['https://www.xiaohongshu.com/explore/69fd8382000000003701f115?xsec_token=xxx']]);XLSX.utils.book_append_sheet(wb,s2,'链接')
-XLSX.writeFile(wb,'xhs_upload_template.xlsx')}
-function dlIdTemplate(){dlTemplate()}
+XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet([['链接'],['https://www.xiaohongshu.com/explore/69fd8382000000003701f115?xsec_token=xxx'],['https://www.xiaohongshu.com/explore/69e4612b000000002200c8f5?xsec_token=xxx']]),'链接')
+XLSX.writeFile(wb,'xhs_links_template.xlsx')}
 
 // ==== URL解析 ====
 function parse(s){
