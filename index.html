@@ -196,24 +196,34 @@ document.getElementById('input').value=ids.join('\n');document.getElementById('c
 function checkServer(){
 // 方式1：当前在 Flask 服务上
 if(window.location.hostname==='localhost'||window.location.hostname==='127.0.0.1'||window.location.port==='5001'){
-enableLocal(true,window.location.origin);return}
-// 方式2：尝试连 localhost:5001 (Chrome 允许 HTTPS→HTTP 到 localhost)
-fetch('http://localhost:5001/',{mode:'no-cors'}).then(function(){enableLocal(true,'http://localhost:5001')
+testServer(window.location.origin);return}
+// 方式2：尝试连 localhost:5001
+fetch('http://localhost:5001/',{mode:'no-cors'}).then(function(){testServer('http://localhost:5001')
 }).catch(function(){enableLocal(false)})}
-function enableLocal(ok,url){
-if(ok){localStorage.setItem('xhs_server',url);SERVER=url
-}else{localStorage.removeItem('xhs_server')}
+function testServer(url){
+// 测试Cookie是否有效
+fetch(url+'/api/convert',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({noteIds:['test']})})
+.then(function(r){return r.json()}).then(function(res){
+if(res.error==='COOKIE_EXPIRED'){
+enableLocal(false,'Cookie 已过期，请重新输入')
+localStorage.removeItem('xhs_server')
+}else{
+enableLocal(true,url)
+localStorage.setItem('xhs_server',url);SERVER=url
+}
+}).catch(function(){enableLocal(true,url);localStorage.setItem('xhs_server',url);SERVER=url})}
+function enableLocal(ok,msg){
 var btn=document.querySelector('#sub1 .btn-primary')
 var info=document.querySelector('#sub1 .info')
 var cookieSec=document.getElementById('cookieSection')
 if(!btn||!info)return
 if(ok){
 btn.disabled=false;btn.style.opacity='1';btn.textContent='🔄 批量转换'
-info.innerHTML='🟢 本地服务已连接'
+info.innerHTML='🟢 服务已连接，Cookie 有效 ✅'
 cookieSec.classList.add('hidden')
 }else{
-btn.disabled=true;btn.style.opacity='.5';btn.textContent='🔄 批量转换'
-info.innerHTML='🔴 网络转换（请输入上方 Cookie）'
+btn.disabled=false;btn.style.opacity='1';btn.textContent='🔄 批量转换'
+info.innerHTML='🔴 '+(msg||'服务未连接，请填写下方 Cookie')
 cookieSec.classList.remove('hidden')
 }}
 checkServer()
