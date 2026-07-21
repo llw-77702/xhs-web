@@ -201,7 +201,7 @@ var item=document.createElement('div');item.className='result-item ok'
 item.innerHTML='<div>✅</div><div class=\"result-content\"><div class=\"result-id\">'+p.id+'</div><div id=\"rd_'+idx+'\" style=\"font-size:12px;color:var(--text2)\">⏳ 加载中...</div></div>'
 list.appendChild(item)
 if(p.token){
-fetch('http://localhost:5001/api/note_info',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({noteId:p.id,xsecToken:p.token})})
+fetch('/api/note_info',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({noteId:p.id,xsecToken:p.token})})
 .then(function(r){return r.json()}).then(function(res){
 if(res.success&&res.data){var e=document.getElementById('rd_'+idx);if(e){e.innerHTML='👤 '+res.data.nickname+'　🕐 '+fmtTime(res.data.time);_results[idx].nickname=res.data.nickname;_results[idx].time=fmtTime(res.data.time)}}})
 .catch(function(){})}else{
@@ -219,7 +219,7 @@ var wb=XLSX.utils.book_new();var ws=XLSX.utils.aoa_to_sheet(data);XLSX.utils.boo
 XLSX.writeFile(wb,'xhs_results_'+Date.now()+'.xlsx');alert('✅ 已导出 '+_results.length+' 条结果到Excel')}
 
 // ==== TAB1: ID→链接批量转换 ====
-var _idResults=[],SERVER='http://localhost:5001'
+var _idResults=[],SERVER=''
 
 function batchConvert(){
 var raw=document.getElementById('idInput').value,ids=raw.split(/[,\n]+/).map(function(x){return x.trim()}).filter(Boolean)

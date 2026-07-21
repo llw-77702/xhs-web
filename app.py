@@ -272,6 +272,12 @@ def get_note_info_from_explore(note_id, xsec_token):
 # ========== 页面路由 ==========
 @app.route("/")
 def index():
+    import os
+    # 优先返回本地的 index.html（带批量功能的版本）
+    local_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "index.html")
+    if os.path.exists(local_path):
+        from flask import send_file
+        return send_file(local_path)
     return render_template("index.html")
 
 
