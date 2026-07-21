@@ -1,12 +1,12 @@
 <!DOCTYPE html>
 <html lang="zh-CN" data-theme="light">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>🍠 小红书笔记ID转链接</title>
-    <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🍠 小红书笔记工具</title>
+<script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
 :root{--bg:#f5f5f7;--surface:#fff;--border:#e5e5ea;--accent:#fe2c55;--accent-hover:#e8264a;--text:#1d1d1f;--text2:#6e6e73;--text3:#aeaeb2;--shadow:0 1px 3px rgba(0,0,0,.08);--radius:12px}
 *{margin:0;padding:0;box-sizing:border-box}
 body{font-family:-apple-system,BlinkMacSystemFont,'Inter','Segoe UI',sans-serif;background:var(--bg);color:var(--text);line-height:1.6}
@@ -17,25 +17,26 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Inter','Segoe UI',sans-serif;
 .logo-text h1{font-size:20px;font-weight:700}
 .subtitle{font-size:13px;color:var(--text2);margin-top:2px}
 .card{background:var(--surface);border-radius:var(--radius);box-shadow:var(--shadow);border:1px solid var(--border);padding:24px;margin-bottom:16px}
-.card-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+.card-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:8px}
 .card-header h2{font-size:17px;font-weight:600}
 .hint{font-size:12px;color:var(--text3)}
 .textarea{width:100%;padding:14px 16px;border:1.5px solid var(--border);border-radius:8px;font-size:14px;font-family:'SF Mono','Menlo',monospace;resize:vertical;background:var(--bg);color:var(--text);line-height:1.7;min-height:100px;transition:border-color .2s}
 .textarea:focus{outline:none;border-color:var(--accent);background:var(--surface);box-shadow:0 0 0 3px rgba(254,44,85,.15)}
 .btn{display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border:none;border-radius:8px;font-size:14px;font-weight:500;cursor:pointer;transition:all .2s}
 .btn:active{transform:scale(.97)}
-.btn-primary{background:var(--accent);color:#fff}
-.btn-primary:hover{background:var(--accent-hover);box-shadow:0 2px 8px rgba(254,44,85,.4)}
-.btn-secondary{background:#f8f8fa;color:var(--text);border:1px solid var(--border)}
-.btn-secondary:hover{background:#e5e5ea}
+.btn-primary{background:var(--accent);color:#fff}.btn-primary:hover{background:var(--accent-hover);box-shadow:0 2px 8px rgba(254,44,85,.4)}
+.btn-secondary{background:#f8f8fa;color:var(--text);border:1px solid var(--border)}.btn-secondary:hover{background:#e5e5ea}
 .btn-large{width:100%;justify-content:center;padding:16px 24px;font-size:16px;font-weight:600;margin-top:16px}
 .btn-sm{padding:6px 12px;font-size:12px}
 .tab-bar{display:flex;gap:4px;background:#f8f8fa;padding:4px;border-radius:8px;margin-bottom:16px}
 .tab{flex:1;padding:10px 16px;border:none;border-radius:6px;background:transparent;font-size:13px;font-weight:500;cursor:pointer;color:var(--text2);transition:all .2s}
-.tab:hover{color:var(--text)}
-.tab.active{background:var(--surface);color:var(--text);box-shadow:var(--shadow)}
+.tab:hover{color:var(--text)}.tab.active{background:var(--surface);color:var(--text);box-shadow:var(--shadow)}
+.sub-tabs{display:flex;gap:4px;background:#f8f8fa;padding:3px;border-radius:8px;margin-bottom:10px}
+.st{flex:1;padding:7px;border:none;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;color:#999;background:transparent;transition:all .2s}
+.st.active{background:#fff;color:#333;box-shadow:0 1px 2px rgba(0,0,0,.08)}
 .tab-content{display:none}.tab-content.active{display:block}
-.result-item{display:flex;align-items:flex-start;gap:12px;padding:12px 14px;border-radius:8px;margin-bottom:6px;background:#f8f8fa;transition:all .2s}
+.hidden{display:none!important}
+.result-item{display:flex;align-items:flex-start;gap:12px;padding:12px 14px;border-radius:8px;margin-bottom:6px;background:#f8f8fa}
 .result-item.ok{background:#f0fff4}.result-item.err{background:#fff0f0}
 .result-content{flex:1;min-width:0}
 .result-id{font-size:12px;font-weight:600;color:var(--text2);font-family:monospace;margin-bottom:4px}
@@ -43,100 +44,87 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Inter','Segoe UI',sans-serif;
 .result-url a{color:var(--accent);text-decoration:none}
 .step-box{font-size:13px;color:var(--text2);line-height:1.8;padding:12px 14px;background:#f8f8fa;border-radius:8px;margin-bottom:12px}
 .step-box b{color:var(--accent)}
-.hidden{display:none!important}
 .script-box{background:#1a1a2e;color:#e94560;padding:12px;border-radius:8px;font-size:10px;font-family:Menlo,monospace;line-height:1.6;max-height:120px;overflow:auto;cursor:pointer;margin-bottom:8px}
-.footer{text-align:center;padding:20px;font-size:12px;color:var(--text3)}
-.info{font-size:12px;color:var(--text2);margin-top:6px}
 .file-upload{display:inline-block;padding:6px 12px;background:#f8f8fa;border:1px dashed var(--border);border-radius:8px;font-size:12px;color:var(--text2);cursor:pointer;transition:all .2s}
 .file-upload:hover{background:var(--border)}.file-upload input{display:none}
+.actions{display:flex;align-items:center;gap:8px;margin-top:10px;flex-wrap:wrap}
 .stats-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:12px}
 .stat-item{text-align:center;padding:12px;background:#f8f8fa;border-radius:8px}
-.stat-value{font-size:24px;font-weight:700}
-.stat-label{font-size:12px;color:var(--text2);margin-top:2px}
-@media(max-width:640px){.container{padding:16px 12px}.header{flex-direction:column;gap:12px;align-items:flex-start}.stats-grid{gap:8px}.stat-value{font-size:20px}}
+.stat-value{font-size:24px;font-weight:700}.stat-label{font-size:12px;color:var(--text2);margin-top:2px}
+.info{font-size:12px;color:var(--text2);margin-top:6px}
+.footer{text-align:center;padding:20px;font-size:12px;color:var(--text3)}
+@media(max-width:640px){.container{padding:16px 12px}.header{flex-direction:column;gap:12px;align-items:flex-start}}
 </style>
 </head>
 <body>
 <div class="container">
 <header class="header">
-<div class="logo">
-<span class="logo-icon">🍠</span>
-<div class="logo-text"><h1>小红书笔记ID转链接</h1><p class="subtitle">ID转链接 · 链接提取 · 达人信息</p></div>
-</div>
+<div class="logo"><span class="logo-icon">🍠</span><div class="logo-text"><h1>小红书笔记工具</h1><p class="subtitle">ID转链接 · 链接提取 · 达人信息 · 批量导入导出</p></div></div>
 </header>
 
-<main class="main">
 <div class="tab-bar">
 <button class="tab active" onclick="switchTab(1,this)">📝 ID → 链接</button>
 <button class="tab" onclick="switchTab(2,this)">🔗 提取笔记信息</button>
 </div>
 
-<!-- Tab 1: ID→链接 -->
+<!-- ========== TAB 1: ID→链接 ========== -->
 <div class="tab-content active" id="tab1">
 <section class="card">
-<div class="card-header"><h2>📝 ID批量转链接</h2><span class="hint">粘贴或导入文件 → 批量转换 → 导出Excel</span></div>
-<div style="display:flex;gap:4px;margin-bottom:10px;background:#f8f8fa;padding:3px;border-radius:8px">
-<button class="tab2" style="flex:1;padding:7px;border:none;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;background:#fff;color:#333;box-shadow:0 1px 2px rgba(0,0,0,.08)" onclick="sw(1,this)">⚡ 本地转换</button>
-<button class="tab2" style="flex:1;padding:7px;border:none;border-radius:6px;font-size:12px;cursor:pointer;background:transparent;color:#999" onclick="sw(2,this)">🎭 广告平台脚本</button>
+<div class="card-header"><h2>📝 ID批量转链接</h2><span class="hint">支持导入.txt/.csv/.xlsx → 批量转换 → 导出Excel</span></div>
+<div class="sub-tabs">
+<button class="st active" onclick="st(1,this)">⚡ 本地转换</button>
+<button class="st" onclick="st(2,this)">🎭 广告平台脚本</button>
 </div>
 <div id="sub1">
-<textarea class="textarea" id="idInput" rows="5" placeholder="粘贴笔记ID，多个用逗号或换行分隔&#10;67a9c381000000002901324d, 66eabcde0000000012345678"></textarea>
-<div style="display:flex;align-items:center;gap:8px;margin-top:10px;flex-wrap:wrap">
+<textarea class="textarea" id="idInput" rows="5" placeholder="粘贴笔记ID，多个用逗号或换行分隔&#10;69fd8382000000003701f115, 69e4612b000000002200c8f5"></textarea>
+<div class="actions">
 <span class="hint" id="idCount">已输入 0 个ID</span>
 <label class="file-upload">📁 导入文件<input type="file" id="idFileInput" accept=".txt,.csv,.xlsx"></label>
 <button class="btn btn-primary btn-sm" onclick="batchConvert()">🔄 批量转换</button>
 </div>
-<p class="info">💡 需要先启动本地服务，或在「提取信息」中先获取包含xsec_token的链接</p>
+<p class="info">💡 需要启动本地服务（localhost:5001），否则请使用「广告平台脚本」方式</p>
 </div>
 <div id="sub2" class="hidden">
-<div class="step-box">
-<b>①</b> 打开 <a href="https://ad.xiaohongshu.com/" target="_blank">ad.xiaohongshu.com</a> 登录<br>
-<b>②</b> 按 F12 → Console<br>
-<b>③</b> 点下面代码框全选 → Ctrl+C<br>
-<b>④</b> 控制台 Ctrl+V → 回车 → 弹窗中粘贴ID批量转换
-</div>
+<div class="step-box"><b>①</b> 打开 <a href="https://ad.xiaohongshu.com/" target="_blank">ad.xiaohongshu.com</a> 登录<br><b>②</b> 按 F12 → Console<br><b>③</b> 点下面代码框全选 → Ctrl+C<br><b>④</b> 控制台 Ctrl+V → 回车 → 弹窗粘贴ID批量转换</div>
 <div class="script-box" onclick="sel(this)"></div>
-<p class="info">👆 支持批量：粘贴多个ID → 点转换 → 所有链接一键复制</p>
+<p class="info">👆 点击代码框全选，复制后在控制台运行</p>
 </div>
 </section>
 <section class="card" id="idResultCard" style="display:none">
 <div class="card-header"><h2>✅ 转换结果</h2>
-<div style="display:flex;gap:6px">
+<div style="display:flex;gap:6px;flex-wrap:wrap">
 <button class="btn btn-secondary btn-sm" onclick="copyIdUrls()">📋 复制全部链接</button>
 <button class="btn btn-secondary btn-sm" onclick="exportIdResults()">📥 导出Excel</button>
-</div>
-</div>
+</div></div>
 <div id="idResultList"></div>
 <div id="idStatsCard"></div>
 </section>
 </div>
 
-<!-- Tab 2: 提取信息 -->
+<!-- ========== TAB 2: 提取笔记信息 ========== -->
 <div class="tab-content" id="tab2">
 <section class="card">
-<div class="card-header"><h2>🔗 批量提取笔记信息</h2><span class="hint">粘贴或导入文件批量提取</span></div>
+<div class="card-header"><h2>🔗 批量提取笔记信息</h2><span class="hint">粘贴或导入文件，自动提取ID、达人名称、发布时间</span></div>
 <textarea class="textarea" id="input" rows="5" placeholder="粘贴链接，多个用逗号或换行分隔&#10;https://www.xiaohongshu.com/explore/..."></textarea>
-<div style="display:flex;align-items:center;gap:8px;margin-top:10px;flex-wrap:wrap">
+<div class="actions">
 <span class="hint" id="count">已输入 0 条</span>
 <label class="file-upload">📁 导入文件<input type="file" id="fileInput" accept=".txt,.csv,.xlsx"></label>
+<button class="btn btn-secondary btn-sm" onclick="dlTemplate()">📄 下载模版</button>
 <button class="btn btn-primary btn-sm" onclick="run()">🔍 批量提取</button>
 </div>
 </section>
 <section class="card" id="resultCard2" style="display:none">
 <div class="card-header"><h2>✅ 提取结果</h2>
-<div style="display:flex;gap:6px">
+<div style="display:flex;gap:6px;flex-wrap:wrap">
 <button class="btn btn-secondary btn-sm" onclick="copyAllIds()">📋 复制全部ID</button>
 <button class="btn btn-secondary btn-sm" onclick="exportResults()">📥 导出Excel</button>
-</div>
-</div>
+</div></div>
 <div id="resultList2"></div>
 <div id="statsCard2"></div>
 </section>
 </div>
 
-</main>
-
-<footer class="footer"><p>仅供内部使用 · 支持批量导入 .txt/.csv/.xlsx · 导出 .xlsx 结果</p></footer>
+<footer class="footer"><p>仅供内部使用 · 导入支持.txt/.csv/.xlsx · 导出Excel</p></footer>
 </div>
 
 <script>
@@ -148,62 +136,43 @@ function sel(e){var r=document.createRange();r.selectNodeContents(e);var s=windo
 function switchTab(n,el){
 document.querySelectorAll('.tab').forEach(function(t){t.classList.remove('active')});el.classList.add('active')
 document.getElementById('tab1').classList.toggle('active',n===1);document.getElementById('tab2').classList.toggle('active',n===2)
-document.getElementById('idResultCard').style.display='none'
-document.getElementById('resultCard2').style.display='none'
+document.getElementById('idResultCard').style.display='none';document.getElementById('resultCard2').style.display='none'
 }
 
-function sw(n,el){
-el.parentElement.querySelectorAll('.tab2').forEach(function(t){t.style.background='transparent';t.style.color='#999';t.style.boxShadow='none'});
-el.style.background='#fff';el.style.color='#333';el.style.boxShadow='0 1px 2px rgba(0,0,0,.08)';
+function st(n,el){
+el.parentElement.querySelectorAll('.st').forEach(function(t){t.classList.remove('active')});el.classList.add('active')
 document.getElementById('sub1').classList.toggle('hidden',n!==1);document.getElementById('sub2').classList.toggle('hidden',n!==2)
 }
 
-// ID输入计数
-document.getElementById('idInput').addEventListener('input',function(){
-document.getElementById('idCount').textContent='已输入 '+this.value.split(/[,\n]+/).filter(function(x){return x.trim()}).length+' 个ID'})
+document.getElementById('idInput').addEventListener('input',function(){document.getElementById('idCount').textContent='已输入 '+this.value.split(/[,\n]+/).filter(function(x){return x.trim()}).length+' 个ID'})
+document.getElementById('input').addEventListener('input',function(){document.getElementById('count').textContent='已输入 '+this.value.split(/[,\n]+/).filter(function(x){return x.trim()}).length+' 条'})
 
-// ID文件导入
-document.getElementById('idFileInput').addEventListener('change',function(e){
-var f=e.target.files[0];if(!f)return;var ext=f.name.split('.').pop().toLowerCase();
+// ==== 通用文件导入 ====
+function readFile(file,cb){
+var ext=file.name.split('.').pop().toLowerCase();
 if(ext==='xlsx'){
-var reader=new FileReader();reader.onload=function(ev){
-var data=new Uint8Array(ev.target.result);var wb=XLSX.read(data,{type:'array'});var ws=wb.Sheets[wb.SheetNames[0]];var a=XLSX.utils.sheet_to_json(ws,{header:1});
-var ids=[];a.forEach(function(r){r.forEach(function(c){if(c&&c.toString().trim())ids.push(c.toString().trim())})});
-if(!ids.length){alert('文件为空');return}
-document.getElementById('idInput').value=ids.join('\n');document.getElementById('idCount').textContent='已输入 '+ids.length+' 个ID';alert('✅ 导入 '+ids.length+' 个ID')
-};reader.readAsArrayBuffer(f)
-}else{
-var reader=new FileReader();reader.onload=function(ev){
-var ids=ev.target.result.split(/[,\n]+/).map(function(x){return x.trim()}).filter(Boolean);
-if(!ids.length){alert('文件为空');return}
-document.getElementById('idInput').value=ids.join('\n');document.getElementById('idCount').textContent='已输入 '+ids.length+' 个ID';alert('✅ 导入 '+ids.length+' 个ID')
-};reader.readAsText(f)}
-})
+var r=new FileReader();r.onload=function(e){
+var d=new Uint8Array(e.target.result),wb=XLSX.read(d,{type:'array'}),ws=wb.Sheets[wb.SheetNames[0]],a=XLSX.utils.sheet_to_json(ws,{header:1})
+var ids=[];a.forEach(function(r){r.forEach(function(c){if(c&&c.toString().trim())ids.push(c.toString().trim())})});cb(ids)}
+r.readAsArrayBuffer(file)
+}else{var r=new FileReader();r.onload=function(e){var ids=e.target.result.split(/[,\n]+/).map(function(x){return x.trim()}).filter(Boolean);cb(ids)};r.readAsText(file)}
+}
 
-document.getElementById('input').addEventListener('input',function(){
-document.getElementById('count').textContent='已输入 '+this.value.split(/[,\n]+/).filter(function(x){return x.trim()}).length+' 条'})
-
-// 文件导入（支持 .txt/.csv/.xlsx）
 document.getElementById('fileInput').addEventListener('change',function(e){
-var f=e.target.files[0];if(!f)return;
-var ext=f.name.split('.').pop().toLowerCase();
-if(ext==='xlsx'){
-var reader=new FileReader();
-reader.onload=function(ev){
-var data=new Uint8Array(ev.target.result);var wb=XLSX.read(data,{type:'array'});var ws=wb.Sheets[wb.SheetNames[0]];var a=XLSX.utils.sheet_to_json(ws,{header:1});
-var ids=[];a.forEach(function(r){r.forEach(function(c){if(c&&c.toString().trim())ids.push(c.toString().trim())})});
-if(!ids.length){alert('文件为空');return}
-document.getElementById('input').value=ids.join('\n');document.getElementById('count').textContent='已输入 '+ids.length+' 条';alert('✅ 从 Excel 导入 '+ids.length+' 条')
-};reader.readAsArrayBuffer(f)
-}else{
-var reader=new FileReader();
-reader.onload=function(ev){
-var text=ev.target.result;var ids=text.split(/[,\n]+/).map(function(x){return x.trim()}).filter(Boolean);
-if(!ids.length){alert('文件为空');return}
-document.getElementById('input').value=ids.join('\n');document.getElementById('count').textContent='已输入 '+ids.length+' 条';alert('✅ 导入成功：'+ids.length+' 条')
-};reader.readAsText(f)}
-})
+var f=e.target.files[0];if(!f)return;readFile(f,function(ids){if(!ids.length)return alert('文件为空')
+document.getElementById('input').value=ids.join('\n');document.getElementById('count').textContent='已输入 '+ids.length+' 条';alert('✅ 导入 '+ids.length+' 条')})})
 
+document.getElementById('idFileInput').addEventListener('change',function(e){
+var f=e.target.files[0];if(!f)return;readFile(f,function(ids){if(!ids.length)return alert('文件为空')
+document.getElementById('idInput').value=ids.join('\n');document.getElementById('idCount').textContent='已输入 '+ids.length+' 个ID';alert('✅ 导入 '+ids.length+' 个ID')})})
+
+// ==== 下载上传模版 ====
+function dlTemplate(){
+var data=[['笔记ID','链接'],['在此粘贴ID','或在此粘贴链接'],['69fd8382000000003701f115','https://www.xiaohongshu.com/explore/69fd8382000000003701f115?xsec_token=xxx']]
+var wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(data),'模版')
+XLSX.writeFile(wb,'xhs_upload_template.xlsx')}
+
+// ==== URL解析 ====
 function parse(s){
 var id=null,t='';var m=s.match(/explore\/([a-f0-9]{24})/i);if(!m)m=s.match(/discovery\/item\/([a-f0-9]{24})/i)
 if(!m&&/^[a-f0-9]{24}$/i.test(s.trim()))id=s.trim()
@@ -211,89 +180,74 @@ if(m)id=m[1];if(!id)return null
 var mt=s.match(/xsec_token=([^&]+)/);if(mt)t=mt[1]
 return{id:id,token:t}}
 
-window._results=[]
+function fmtTime(t){if(!t)return'未知';if(typeof t=='string'&&t.includes('-'))return t;var d=new Date(t);if(isNaN(d.getTime()))return t;return d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate()+' '+d.getHours()+':'+d.getMinutes()}
+
+// ==== TAB2: 提取笔记信息 ====
+var _results=[]
 function run(){
-var raw=document.getElementById('input').value;var items=raw.split(/[,\n]+/).map(function(x){return x.trim()}).filter(Boolean)
+var raw=document.getElementById('input').value,items=raw.split(/[,\n]+/).map(function(x){return x.trim()}).filter(Boolean)
 if(!items.length)return alert('请输入链接')
-var list=document.getElementById('resultList2'),card=document.getElementById('resultCard2'),stats=document.getElementById('statsCard2')
-_results=[];list.innerHTML='';card.style.display='';stats.innerHTML=''
-var ok=0,fail=0
+_results=[];var list=document.getElementById('resultList2'),card=document.getElementById('resultCard2'),stats=document.getElementById('statsCard2')
+list.innerHTML='';card.style.display='';stats.innerHTML=''
+var ok=0,fail=0,pending=0
 items.forEach(function(s){
 var p=parse(s)
-if(!p){fail++;list.innerHTML+='<div class=\"result-item err\"><div style=\"font-size:18px\">❌</div><div class=\"result-content\"><div class=\"result-id\">无法识别</div></div></div>';return}
-ok++
-_results.push({id:p.id,src:s})
-var item=document.createElement('div');item.className='result-item ok';item.id='ri_'+p.id
-item.innerHTML='<div style=\"font-size:18px\">✅</div><div class=\"result-content\"><div class=\"result-id\">'+p.id+'</div><div style=\"font-size:12px;color:var(--text2)\" id=\"rd_'+p.id+'\"></div></div>'
+if(!p){fail++;list.innerHTML+='<div class=\"result-item err\"><div>❌</div><div class=\"result-content\"><div class=\"result-id\">无法识别</div></div></div>';return}
+ok++;pending++
+var idx=_results.length;_results.push({id:p.id,src:s,nickname:'',time:''})
+var item=document.createElement('div');item.className='result-item ok'
+item.innerHTML='<div>✅</div><div class=\"result-content\"><div class=\"result-id\">'+p.id+'</div><div id=\"rd_'+idx+'\" style=\"font-size:12px;color:var(--text2)\">⏳ 加载中...</div></div>'
 list.appendChild(item)
 if(p.token){
 fetch('http://localhost:5001/api/note_info',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({noteId:p.id,xsecToken:p.token})})
-.then(function(r){return r.json()})
-.then(function(res){
-var e=document.getElementById('rd_'+p.id);if(e&&res.success&&res.data){e.innerHTML='👤 '+res.data.nickname+' | 🕐 '+fmtTime(res.data.time);_results[_results.length-1].nickname=res.data.nickname;_results[_results.length-1].time=fmtTime(res.data.time)}})}})
-stats.innerHTML='<div class=\"stats-grid\"><div class=\"stat-item\"><div class=\"stat-value\">'+ok+'</div><div class=\"stat-label\">✅ 成功</div></div><div class=\"stat-item\"><div class=\"stat-value\">'+fail+'</div><div class=\"stat-label\">❌ 失败</div></div><div class=\"stat-item\"><div class=\"stat-value\">'+_results.length+'</div><div class=\"stat-label\">📊 总计</div></div></div>'
+.then(function(r){return r.json()}).then(function(res){
+if(res.success&&res.data){var e=document.getElementById('rd_'+idx);if(e){e.innerHTML='👤 '+res.data.nickname+'　🕐 '+fmtTime(res.data.time);_results[idx].nickname=res.data.nickname;_results[idx].time=fmtTime(res.data.time)}}})
+.catch(function(){})}else{
+var e=document.getElementById('rd_'+idx);if(e)e.innerHTML='⚠️ 无xsec_token，仅提取ID'
 }
+setTimeout(function(){stats.innerHTML='<div class=\"stats-grid\"><div class=\"stat-item\"><div class=\"stat-value\">'+ok+'</div><div class=\"stat-label\">✅ 成功</div></div><div class=\"stat-item\"><div class=\"stat-value\">'+fail+'</div><div class=\"stat-label\">❌ 失败</div></div><div class=\"stat-item\"><div class=\"stat-value\">'+_results.length+'</div><div class=\"stat-label\">📊 总计</div></div></div>'},500)
+})}
 
-function fmtTime(t){if(!t)return'未知';if(typeof t=='string'&&t.includes('-'))return t;var d=new Date(t);if(isNaN(d.getTime()))return t;return d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate()+' '+d.getHours()+':'+d.getMinutes()}
-
-window.copyAllIds=function(){var ids=_results.map(function(r){return r.id}).join('\n');if(!ids)return alert('无结果');var ta=document.createElement('textarea');ta.value=ids;document.body.appendChild(ta);ta.select();document.execCommand('copy');document.body.removeChild(ta);alert('✅ 已复制 '+_results.length+' 个ID')}
+window.copyAllIds=function(){var ids=_results.map(function(r){return r.id}).join('\n');if(!ids)return alert('无结果')
+var ta=document.createElement('textarea');ta.value=ids;document.body.appendChild(ta);ta.select();document.execCommand('copy');document.body.removeChild(ta);alert('✅ 已复制 '+_results.length+' 个ID')}
 
 window.exportResults=function(){if(!_results.length)return alert('无结果')
 var data=[['笔记ID','达人名称','发布时间','来源链接']];_results.forEach(function(r){data.push([r.id||'',r.nickname||'',r.time||'',r.src||''])})
 var wb=XLSX.utils.book_new();var ws=XLSX.utils.aoa_to_sheet(data);XLSX.utils.book_append_sheet(wb,ws,'结果')
-XLSX.writeFile(wb,'xhs_results_'+Date.now()+'.xlsx');alert('✅ 已导出 '+_results.length+' 条结果到 Excel')}
+XLSX.writeFile(wb,'xhs_results_'+Date.now()+'.xlsx');alert('✅ 已导出 '+_results.length+' 条结果到Excel')}
 
-function fmtTime(t){if(!t)return'未知';if(t.includes('-'))return t;var d=new Date(t);if(isNaN(d.getTime()))return t;return d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate()+' '+d.getHours()+':'+d.getMinutes()}
+// ==== TAB1: ID→链接批量转换 ====
+var _idResults=[],SERVER='http://localhost:5001'
 
-window.copyAll=function(){var ids=_results.map(function(r){return r.id}).join('\n');if(!ids){alert('无结果');return};var ta=document.createElement('textarea');ta.value=ids;document.body.appendChild(ta);ta.select();document.execCommand('copy');document.body.removeChild(ta);alert('✅ 已复制 '+_results.length+' 个ID')}
-
-// ========== ID→链接 批量转换 ==========
-var SERVER='http://localhost:5001';var _idResults=[]
 function batchConvert(){
-var raw=document.getElementById('idInput').value;var ids=raw.split(/[,\n]+/).map(function(x){return x.trim()}).filter(Boolean)
+var raw=document.getElementById('idInput').value,ids=raw.split(/[,\n]+/).map(function(x){return x.trim()}).filter(Boolean)
 if(!ids.length)return alert('请输入笔记ID')
-var list=document.getElementById('idResultList'),card=document.getElementById('idResultCard'),stats=document.getElementById('idStatsCard')
-_idResults=[];list.innerHTML='';card.style.display='';stats.innerHTML=''
-
-// 分批请求（每批50个）
-var batchSize=50,done=0
-for(var i=0;i<ids.length;i+=batchSize){
-var batch=ids.slice(i,i+batchSize);done+=batch.length
-fetch(SERVER+'/api/convert_with_cookie',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({noteIds:batch.join(','),cookie:''})})
+_idResults=[];var list=document.getElementById('idResultList'),card=document.getElementById('idResultCard'),stats=document.getElementById('idStatsCard')
+list.innerHTML='';card.style.display='';stats.innerHTML=''
+var done=0,total=ids.length
+ids.forEach(function(id){
+fetch(SERVER+'/api/convert',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({noteIds:id})})
 .then(function(r){return r.json()}).then(function(res){
+done++
 if(res.success&&res.results){res.results.forEach(function(r){
-var cls=r.success?'ok':'err'
-var item=document.createElement('div');item.className='result-item '+cls
-item.innerHTML='<div style=\"font-size:18px\">'+(r.success?'✅':'❌')+'</div><div class=\"result-content\"><div class=\"result-id\">'+r.id+'</div><div class=\"result-url\">'+(r.url?('<a href=\"'+r.url+'\" target=\"_blank\">'+r.url+'</a>'):'获取失败')+'</div></div>'
-list.appendChild(item);if(r.success)_idResults.push({id:r.id,url:r.url})
-})}else{
-// 如果是Cookie过期，显示错误
-var errMsg=res.error||res.message||'请求失败'
-var item=document.createElement('div');item.className='result-item err'
-item.innerHTML='<div style=\"font-size:18px\">❌</div><div class=\"result-content\"><div class=\"result-id\">错误: '+errMsg+'</div><div class=\"result-url\">需要先在「提取笔记信息」中获取有效的xsec_token，或启动本地服务</div></div>'
-list.appendChild(item)
-}}).catch(function(e){
-list.innerHTML='<div class=\"result-item err\"><div style=\"font-size:18px\">❌</div><div class=\"result-content\"><div class=\"result-id\">请求失败</div><div class=\"result-url\">'+e.message+'</div></div>'
+if(r.success){_idResults.push({id:r.id,url:r.url})
+list.innerHTML+='<div class=\"result-item ok\"><div>✅</div><div class=\"result-content\"><div class=\"result-id\">'+r.id+'</div><div class=\"result-url\"><a href=\"'+r.url+'\" target=\"_blank\">'+r.url+'</a></div></div></div>'}
+else{list.innerHTML+='<div class=\"result-item err\"><div>❌</div><div class=\"result-content\"><div class=\"result-id\">'+r.id+'</div><div class=\"result-url\">获取失败</div></div></div>'}})}
+else{list.innerHTML+='<div class=\"result-item err\"><div>❌</div><div class=\"result-content\"><div class=\"result-id\">错误</div><div class=\"result-url\">'+(res.error||'Cookie过期')+'</div></div></div>'}
+}).catch(function(e){done++
+list.innerHTML+='<div class=\"result-item err\"><div>❌</div><div class=\"result-content\"><div class=\"result-id\">请求失败</div><div class=\"result-url\">'+e.message+'</div></div></div>'
 }).then(function(){
-if(done>=ids.length){
-var ok=_idResults.length;var fail=ids.length-ok
-stats.innerHTML='<div class=\"stats-grid\"><div class=\"stat-item\"><div class=\"stat-value\">'+ok+'</div><div class=\"stat-label\">✅ 成功</div></div><div class=\"stat-item\"><div class=\"stat-value\">'+fail+'</div><div class=\"stat-label\">❌ 失败</div></div><div class=\"stat-item\"><div class=\"stat-value\">'+ids.length+'</div><div class=\"stat-label\">📊 总计</div></div></div>'
-}})
-}}
-
-window.copyIdUrls=function(){
-var urls=_idResults.map(function(r){return r.url}).join('\n')
-if(!urls)return alert('无结果')
-var ta=document.createElement('textarea');ta.value=urls;document.body.appendChild(ta);ta.select();document.execCommand('copy');document.body.removeChild(ta)
-alert('✅ 已复制 '+_idResults.length+' 个链接')
+if(done>=total){var ok=_idResults.length;stats.innerHTML='<div class=\"stats-grid\"><div class=\"stat-item\"><div class=\"stat-value\">'+ok+'</div><div class=\"stat-label\">✅成功</div></div><div class=\"stat-item\"><div class=\"stat-value\">'+(total-ok)+'</div><div class=\"stat-label\">❌失败</div></div><div class=\"stat-item\"><div class=\"stat-value\">'+total+'</div><div class=\"stat-label\">📊总计</div></div></div>'}}
+)})
 }
 
-window.exportIdResults=function(){
-if(!_idResults.length)return alert('无结果')
+window.copyIdUrls=function(){var urls=_idResults.map(function(r){return r.url}).join('\n');if(!urls)return alert('无结果')
+var ta=document.createElement('textarea');ta.value=urls;document.body.appendChild(ta);ta.select();document.execCommand('copy');document.body.removeChild(ta);alert('✅ 已复制 '+_idResults.length+' 个链接')}
+
+window.exportIdResults=function(){if(!_idResults.length)return alert('无结果')
 var data=[['笔记ID','分享链接']];_idResults.forEach(function(r){data.push([r.id,r.url])})
-var wb=XLSX.utils.book_new();var ws=XLSX.utils.aoa_to_sheet(data);XLSX.utils.book_append_sheet(wb,ws,'链接')
-XLSX.writeFile(wb,'xhs_links_'+Date.now()+'.xlsx');alert('✅ 已导出 '+_idResults.length+' 条链接到 Excel')
-}
+var wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(data),'链接')
+XLSX.writeFile(wb,'xhs_links_'+Date.now()+'.xlsx');alert('✅ 已导出 '+_idResults.length+' 条链接到Excel')}
 </script>
 </body>
 </html>
