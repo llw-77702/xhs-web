@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🍠 小红书笔记ID转链接</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        <!-- 头部 -->
+        <header class="header">
+            <div class="logo">
+                <span class="logo-icon">🍠</span>
+                <div class="logo-text">
+                    <h1>小红书笔记ID转链接</h1>
+                    <p class="subtitle">批量转换笔记 ID 为可分享链接</p>
+                </div>
+            </div>
+            <div class="header-actions">
+                <button class="btn btn-secondary" id="btnCookie" onclick="openCookieModal()">
+                    🔑 Cookie 管理
+                </button>
+                <span class="cookie-status" id="cookieStatus">
+                    <span class="dot dot-checking"></span> 检测中...
+                </span>
+            </div>
+        </header>
+
+        <!-- 主内容 -->
+        <main class="main">
+            <!-- 输入区域 -->
+            <section class="card input-card">
+                <div class="card-header">
+                    <h2>📝 输入笔记ID</h2>
+                    <div class="hint">多个 ID 用逗号或换行分隔</div>
+                </div>
+                <textarea
+                    id="noteIds"
+                    class="textarea"
+                    placeholder="例如：66eabcde0000000012345678&#10;或：66eabcde0000000012345678, 66f1234500000000987654321"
+                    rows="6"
+                ></textarea>
+                <div class="input-stats">
+                    <span id="idCount">已输入 0 个 ID</span>
+                    <label class="batch-mode" title="移除重复ID">
+                        <input type="checkbox" id="dedupCheck" checked>
+                        <span>去重</span>
+                    </label>
+                </div>
+                <button class="btn btn-primary btn-large" id="btnConvert" onclick="startConvert()">
+                    <span class="btn-icon">🔗</span>
+                    <span class="btn-text">转换链接</span>
+                </button>
+            </section>
+
+            <!-- 进度区域 -->
+            <section class="card progress-card" id="progressCard" style="display:none;">
+                <div class="progress-bar-container">
+                    <div class="progress-bar" id="progressBar"></div>
+                </div>
+                <div class="progress-info">
+                    <span id="progressText">处理中...</span>
+                    <span id="progressCount">0/0</span>
+                </div>
+            </section>
+
+            <!-- 结果区域 -->
+            <section class="card result-card" id="resultCard" style="display:none;">
+                <div class="card-header">
+                    <h2>✅ 生成结果</h2>
+                    <div class="result-actions">
+                        <button class="btn btn-secondary btn-sm" onclick="copyAllUrls()">📋 复制全部</button>
+                        <button class="btn btn-secondary btn-sm" onclick="exportTxt()">📥 导出TXT</button>
+                        <button class="btn btn-secondary btn-sm" onclick="clearResults()">🗑️ 清空</button>
+                    </div>
+                </div>
+                <div class="result-list" id="resultList"></div>
+            </section>
+
+            <!-- 统计卡片 -->
+            <section class="card stats-card" id="statsCard" style="display:none;">
+                <div class="stats-grid">
+                    <div class="stat-item">
+                        <div class="stat-value" id="statSuccess">0</div>
+                        <div class="stat-label">✅ 成功</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value" id="statFailed">0</div>
+                        <div class="stat-label">❌ 失败</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value" id="statTotal">0</div>
+                        <div class="stat-label">📊 总计</div>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <!-- 底部 -->
+        <footer class="footer">
+            <p>仅供内部使用 · 数据通过加密传输</p>
+        </footer>
+    </div>
+
+    <!-- Cookie 管理弹窗 -->
+    <div class="modal-overlay" id="cookieModal" style="display:none;" onclick="closeModalOnOutside(event)">
+        <div class="modal">
+            <div class="modal-header">
+                <h2>🔑 Cookie 管理</h2>
+                <button class="modal-close" onclick="closeCookieModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <!-- 状态显示 -->
+                <div class="cookie-info" id="cookieInfo">
+                    <div class="info-row">
+                        <span class="info-label">当前状态：</span>
+                        <span class="info-value" id="cookieStatusText">检测中...</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">来源：</span>
+                        <span class="info-value" id="cookieSource">数据库</span>
+                    </div>
+                </div>
+
+                <!-- Tab 切换 -->
+                <div class="tab-bar">
+                    <button class="tab active" onclick="switchTab('login', this)">
+                        <span class="tab-icon">🖥️</span> 自动登录
+                    </button>
+                    <button class="tab" onclick="switchTab('manual', this)">
+                        <span class="tab-icon">✏️</span> 手动输入
+                    </button>
+                </div>
+
+                <!-- 自动登录 Tab -->
+                <div class="tab-content active" id="tabLogin">
+                    <p class="tab-desc">使用 Playwright 打开浏览器窗口，自动填写账号密码登录</p>
+                    <div class="form-group">
+                        <label>登录邮箱：</label>
+                        <input type="email" id="loginEmail" class="input" placeholder="m15768773448@163.com" value="m15768773448@163.com">
+                    </div>
+                    <div class="form-group">
+                        <label>密码（可选，留空则手动输入）：</label>
+                        <input type="password" id="loginPassword" class="input" placeholder="输入密码...">
+                    </div>
+                    <button class="btn btn-primary" onclick="startAutoLogin()">
+                        🚀 开始登录
+                    </button>
+                    <div class="login-tip">
+                        💡 浏览器窗口弹出后，如已自动填写，等待登录完成即可。
+                        <br>若未自动填写，请手动输入账号密码登录。
+                    </div>
+                </div>
+
+                <!-- 手动输入 Tab -->
+                <div class="tab-content" id="tabManual">
+                    <p class="tab-desc">从浏览器开发者工具中复制完整的 Cookie 字符串</p>
+                    <p class="tab-tip">💡 如何获取：打开小红书广告平台 → F12 → Application → Cookies → 复制所有</p>
+                    <textarea id="manualCookie" class="textarea" rows="4"
+                        placeholder="ares.beaker.session.id=xxx; acw_tc=xxx; ..."></textarea>
+                    <button class="btn btn-primary" onclick="submitManualCookie()">
+                        💾 保存 Cookie
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast 通知 -->
+    <div class="toast-container" id="toastContainer"></div>
+
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+    <script>
+        // 页面加载时检查 Cookie 状态
+        document.addEventListener('DOMContentLoaded', checkCookieStatus);
+    </script>
+</body>
+</html>
