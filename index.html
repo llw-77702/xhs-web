@@ -255,9 +255,10 @@ XLSX.writeFile(wb,'xhs_links_template.xlsx')}
 function parse(s){
 var id=null,t='';var m=s.match(/explore\/([a-f0-9]{24})/i);if(!m)m=s.match(/discovery\/item\/([a-f0-9]{24})/i)
 if(!m&&/^[a-f0-9]{24}$/i.test(s.trim()))id=s.trim()
-if(m)id=m[1];if(!id)return null
+if(m)id=m[1];if(!id&&/xhslink\.com|s\.xiaohongshu|t\.cn/i.test(s)){return{id:null,token:null,shortUrl:s,isShort:true}}
+if(!id)return null
 var mt=s.match(/xsec_token=([^&]+)/);if(mt)t=mt[1]
-return{id:id,token:t}}
+return{id:id,token:t,isShort:false}}
 
 function fmtTime(t){if(!t)return'未知';if(typeof t=='string'&&t.includes('-'))return t;var d=new Date(t);if(isNaN(d.getTime()))return t;return d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate()+' '+d.getHours()+':'+d.getMinutes()}
 
@@ -268,24 +269,41 @@ var raw=document.getElementById('input').value,items=raw.split(/[,\n]+/).map(fun
 if(!items.length)return alert('请输入链接')
 _results=[];var list=document.getElementById('resultList2'),card=document.getElementById('resultCard2'),stats=document.getElementById('statsCard2')
 list.innerHTML='';card.style.display='';stats.innerHTML=''
-var ok=0,fail=0,pending=0
+// 检测短链接
+var hasShort=items.some(function(s){return /xhslink\.com|s\.xiaohongshu|t\.cn/i.test(s)&&!/explore\//.test(s)})
+if(hasShort){
+// 通过后端解析短链接
+var serverUrl=window.location.origin
+if(window.location.port!=='5001'&&localStorage.getItem('xhs_server'))serverUrl=localStorage.getItem('xhs_server')
+fetch(serverUrl+'/api/resolve_url',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({urls:items})})
+.then(function(r){return r.json()}).then(function(res){
+if(res.results){
+var resolved=[]
+res.results.forEach(function(r){
+if(r.ok){resolved.push({token:r.token,src:r.url,id:r.id,isShort:false})
+list.innerHTML+='<div class="result-item ok"><div>✅</div><div class="result-content"><div class="result-id">'+r.id+'</div><div id="rd_'+resolved.length+'" style="font-size:12px;color:var(--text2)">✅ 已解析</div></div></div>'}
+else{list.innerHTML+='<div class="result-item err"><div>❌</div><div class="result-content"><div class="result-id">'+r.url+'</div><div style="font-size:12px;color:var(--text2)">'+r.error+'</div></div></div>'}
+})
+_results=resolved
+var ok=resolved.length
+stats.innerHTML='<div class="stats-grid"><div class="stat-item"><div class="stat-value">'+ok+'</div><div class="stat-label">✅ 成功</div></div><div class="stat-item"><div class="stat-value">'+(res.results.length-ok)+'</div><div class="stat-label">❌ 失败</div></div><div class="stat-item"><div class="stat-value">'+res.results.length+'</div><div class="stat-label">📊 总计</div></div></div>'
+}}).catch(function(e){alert('短链接解析失败: '+e.message)})}else{
+// 普通链接，直接解析
 items.forEach(function(s){
 var p=parse(s)
-if(!p){fail++;list.innerHTML+='<div class=\"result-item err\"><div>❌</div><div class=\"result-content\"><div class=\"result-id\">无法识别</div></div></div>';return}
-ok++;pending++
+if(!p){list.innerHTML+='<div class="result-item err"><div>❌</div><div class="result-content"><div class="result-id">无法识别</div></div></div>';return}
 var idx=_results.length;_results.push({id:p.id,src:s,nickname:'',time:''})
 var item=document.createElement('div');item.className='result-item ok'
-item.innerHTML='<div>✅</div><div class=\"result-content\"><div class=\"result-id\">'+p.id+'</div><div id=\"rd_'+idx+'\" style=\"font-size:12px;color:var(--text2)\">⏳ 加载中...</div></div>'
+item.innerHTML='<div>✅</div><div class="result-content"><div class="result-id">'+p.id+'</div><div id="rd_'+idx+'" style="font-size:12px;color:var(--text2)">'+(p.token?'⏳ 加载中...':'⚠️ 无token')+'</div></div>'
 list.appendChild(item)
 if(p.token){
-fetch(window.location.origin+'/api/note_info',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({noteId:p.id,xsecToken:p.token})})
+var serverUrl=window.location.origin;if(window.location.port!=='5001'&&localStorage.getItem('xhs_server'))serverUrl=localStorage.getItem('xhs_server')
+fetch(serverUrl+'/api/note_info',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({noteId:p.id,xsecToken:p.token})})
 .then(function(r){return r.json()}).then(function(res){
 if(res.success&&res.data){var e=document.getElementById('rd_'+idx);if(e){e.innerHTML='👤 '+res.data.nickname+'　🕐 '+fmtTime(res.data.time);_results[idx].nickname=res.data.nickname;_results[idx].time=fmtTime(res.data.time)}}})
-.catch(function(){var e=document.getElementById('rd_'+idx);if(e){e.innerHTML='💡 需在 <a href=\"http://localhost:5001/\" target=\"_blank\">localhost:5001</a> 查看'}})}else{
-var e=document.getElementById('rd_'+idx);if(e)e.innerHTML='⚠️ 无xsec_token，仅提取ID'
+.catch(function(){var e=document.getElementById('rd_'+idx);if(e)e.innerHTML='💡 需连接服务查看'}})}})
+stats.innerHTML='<div class="stats-grid"><div class="stat-item"><div class="stat-value">'+_results.length+'</div><div class="stat-label">📊 总计</div></div></div>'}
 }
-setTimeout(function(){stats.innerHTML='<div class=\"stats-grid\"><div class=\"stat-item\"><div class=\"stat-value\">'+ok+'</div><div class=\"stat-label\">✅ 成功</div></div><div class=\"stat-item\"><div class=\"stat-value\">'+fail+'</div><div class=\"stat-label\">❌ 失败</div></div><div class=\"stat-item\"><div class=\"stat-value\">'+_results.length+'</div><div class=\"stat-label\">📊 总计</div></div></div>'},500)
-})}
 
 window.copyAllIds=function(){var ids=_results.map(function(r){return r.id}).join('\n');if(!ids)return alert('无结果')
 var ta=document.createElement('textarea');ta.value=ids;document.body.appendChild(ta);ta.select();document.execCommand('copy');document.body.removeChild(ta);alert('✅ 已复制 '+_results.length+' 个ID')}

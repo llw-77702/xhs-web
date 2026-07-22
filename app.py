@@ -395,6 +395,42 @@ def api_note_info():
     return jsonify({"success": True, "data": info})
 
 
+@app.route("/api/resolve_url", methods=["POST"])
+def api_resolve_url():
+    """解析短链接，返回最终的完整链接（含笔记ID和xsec_token）"""
+    data = request.get_json()
+    urls = data.get("urls", [])
+    results = []
+    for url in urls:
+        url = url.strip()
+        try:
+            resp = httpx.get(url, follow_redirects=True, timeout=10,
+                             headers={"User-Agent": "Mozilla/5.0"}, verify=False)
+            final_url = str(resp.url)
+            # 提取笔记ID
+            import re
+            m = re.search(r'(?:explore|discovery/item)/([a-f0-9]{24})', final_url, re.I)
+            if m:
+                token = ""
+                mt = re.search(r'xsec_token=([^&#]+)', final_url)
+                if mt:
+                    token = mt.group(1)
+                    # 解码 URL 编码
+                    from urllib.parse import unquote
+                    token = unquote(token)
+                results.append({"id": m.group(1), "token": token, "url": final_url, "ok": True})
+            else:
+                # 尝试从页面内容提取
+                m2 = re.search(r'"noteId"\s*:\s*"([a-f0-9]{24})"', resp.text)
+                if m2:
+                    results.append({"id": m2.group(1), "token": "", "url": final_url, "ok": True})
+                else:
+                    results.append({"id": "", "token": "", "url": final_url, "ok": False, "error": "无法提取笔记ID"})
+        except Exception as e:
+            results.append({"id": "", "token": "", "url": url, "ok": False, "error": str(e)})
+    return jsonify({"success": True, "results": results})
+
+
 # ========== 启动 ==========
 if __name__ == "__main__":
     print("\n" + "=" * 52)
