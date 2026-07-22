@@ -203,10 +203,10 @@ document.getElementById('input').value=ids.join('\n');document.getElementById('c
 
 // 检测本地服务
 function checkServer(){
-// 方式1：当前在 Flask 服务上
-if(window.location.hostname==='localhost'||window.location.hostname==='127.0.0.1'||window.location.port==='5001'){
+// 检测是否在 Flask 服务上（任意IP的5001端口都算）
+if(window.location.port==='5001'||window.location.hostname==='localhost'||window.location.hostname==='127.0.0.1'){
 testServer(window.location.origin);return}
-// 方式2：尝试连 localhost:5001
+// 尝试连 localhost:5001（GitHub Pages 上检测）
 fetch('http://localhost:5001/',{mode:'no-cors'}).then(function(){testServer('http://localhost:5001')
 }).catch(function(){enableLocal(false)})}
 function testServer(url){
