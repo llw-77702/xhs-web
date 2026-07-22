@@ -338,26 +338,8 @@ function run(){
     .then(function(r){return r.json()}).then(function(res){
       if(res.results){showResolveResults(res.results);}
     }).catch(function(){
-      // Flask不可达，用CORS代理直接解析短链接
-      var pending=items.length,results=[];
-      items.forEach(function(url,i){
-        var proxyUrl='https://api.codetabs.com/v1/proxy?quest='+encodeURIComponent(url);
-        fetch(proxyUrl).then(function(r){return r.text()}).then(function(html){
-          pending--;
-          // 从页面内容提取重定向URL或笔记ID
-          var m=html.match(/explore\/([a-f0-9]{24})/i)||html.match(/discovery\/item\/([a-f0-9]{24})/i);
-          if(m){
-            var mt=html.match(/xsec_token=([^&"]+)/);
-            results.push({ok:true,id:m[1],token:mt?mt[1]:'',url:url});
-          }else{
-            results.push({ok:false,id:'',token:'',url:url,error:'无法提取笔记ID'});
-          }
-          if(pending<=0)showResolveResults(results);
-        }).catch(function(){pending--;
-          results.push({ok:false,id:'',token:'',url:url,error:'请求失败'});
-          if(pending<=0)showResolveResults(results);
-        });
-      });
+      // Flask不可达，引导用户
+      showResolveResults(items.map(function(url){return {ok:false,id:'',token:'',url:url,error:'需连接Flask服务解析短链接'};}));
     });
   }else{
     items.forEach(function(s){
