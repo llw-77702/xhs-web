@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>🍠 小红书笔记工具</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif;background:#f5f5f7;color:#1d1d1f;padding:12px;width:400px}
+h1{font-size:16px;font-weight:700;text-align:center}
+.sub{text-align:center;font-size:11px;color:#6e6e73;margin-bottom:10px}
+.card{background:#fff;border-radius:10px;padding:12px;margin-bottom:8px}
+textarea{width:100%;padding:8px;border:1.5px solid #e5e5ea;border-radius:6px;font-size:12px;font-family:Menlo,monospace;resize:vertical;min-height:50px}
+textarea:focus{outline:none;border-color:#fe2c55}
+.btn{display:block;width:100%;padding:10px;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;margin-top:6px}
+.btn-red{background:#fe2c55;color:#fff}
+.btn-gray{background:#f0f0f0;color:#333;font-size:11px}
+.actions{display:flex;gap:6px;margin-top:6px;align-items:center;flex-wrap:wrap}
+.result{padding:6px 8px;border-radius:4px;margin-bottom:4px;font-size:11px;background:#f8f8f8}
+.result.ok{background:#f0fff4}.result.err{background:#fff0f0}
+.hidden{display:none}
+.status{padding:8px 10px;border-radius:6px;font-size:11px;margin-bottom:8px}
+.status.ok{background:#f0fff4;color:#27ae60}.status.err{background:#fff0f0;color:#e74c3c}.status.wait{background:#fff8e1;color:#856404}
+.tab-bar{display:flex;gap:3px;background:#f0f0f0;padding:3px;border-radius:6px;margin-bottom:8px}
+.tab{flex:1;padding:6px;border:none;border-radius:4px;background:transparent;font-size:11px;cursor:pointer;color:#6e6e73}
+.tab.active{background:#fff;color:#1d1d1f;box-shadow:0 1px 2px rgba(0,0,0,.08);font-weight:600}
+.footer{text-align:center;font-size:10px;color:#aeaeb2;margin-top:6px}
+.file-btn{display:inline-block;padding:4px 8px;background:#f0f0f0;border:1px dashed #e5e5ea;border-radius:4px;font-size:10px;color:#6e6e73;cursor:pointer}
+</style>
+</head>
+<body>
+<h1>🍠 小红书笔记工具</h1>
+<p class="sub">ID转链接·提取信息·达人数据</p>
+
+<div id="loginStatus" class="status wait">⏳ 检测登录状态...</div>
+
+<div class="tab-bar">
+<button class="tab active" data-tab="1">📝 ID→链接</button>
+<button class="tab" data-tab="2">🔗 提取信息</button>
+</div>
+
+<div id="tab1">
+<div class="card">
+<textarea id="idInput" rows="4" placeholder="粘贴笔记ID，多个用逗号或换行分隔"></textarea>
+<div class="actions">
+<span style="font-size:10px;color:#aeaeb2" id="idCount">已输入0</span>
+<label class="file-btn">📁导入<input type="file" id="idFile" accept=".txt,.csv" style="display:none"></label>
+<button id="convertBtn" class="btn btn-red" style="flex:1">🔄 批量转换</button>
+</div>
+</div>
+<div id="idResult" class="card hidden"></div>
+</div>
+
+<div id="tab2" class="hidden">
+<div class="card">
+<textarea id="linkInput" rows="4" placeholder="粘贴链接，多个用逗号或换行分隔"></textarea>
+<div class="actions">
+<span style="font-size:10px;color:#aeaeb2" id="linkCount">已输入0</span>
+<label class="file-btn">📁导入<input type="file" id="linkFile" accept=".txt,.csv" style="display:none"></label>
+<button id="extractBtn" class="btn btn-red" style="flex:1">🔍 提取</button>
+</div>
+</div>
+<div id="linkResult" class="card hidden"></div>
+</div>
+
+<div class="footer">自动使用ad.xiaohongshu.com登录态</div>
+<script src="popup.js"></script>
+</body>
+</html>

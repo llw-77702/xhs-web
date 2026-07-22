@@ -1,0 +1,17 @@
+{
+  "manifest_version": 3,
+  "name": "🍠 小红书笔记工具",
+  "version": "1.0",
+  "description": "小红书笔记ID转链接·提取信息·达人数据",
+  "permissions": ["storage", "downloads", "cookies"],
+  "host_permissions": [
+    "https://ad.xiaohongshu.com/*",
+    "https://www.xiaohongshu.com/*",
+    "http://xhslink.com/*"
+  ],
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "🍠 小红书笔记工具"
+  },
+  "icons": { "16": "icon16.png", "48": "icon48.png", "128": "icon128.png" }
+}
