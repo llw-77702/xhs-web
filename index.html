@@ -307,6 +307,20 @@ function fmtTime(t){
   var d=new Date(t);if(isNaN(d.getTime()))return t;
   return d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate()+' '+d.getHours()+':'+d.getMinutes();
 }
+function showResolveResults(results){
+  var list=document.getElementById('resultList2'),card=document.getElementById('resultCard2'),stats=document.getElementById('statsCard2');
+  list.innerHTML='';card.style.display='';stats.innerHTML='';
+  _results=[];
+  var ok=0,fail=0;
+  results.forEach(function(r){
+    if(r.ok){ok++;_results.push({id:r.id,nickname:'',time:'',src:r.url||''});
+      list.innerHTML+='<div class="result-item ok"><div>✅</div><div class="result-content"><div class="result-id">'+r.id+'</div><div style="font-size:12px;color:#6e6e73">已提取</div></div></div>';
+    }else{fail++;
+      list.innerHTML+='<div class="result-item err"><div>❌</div><div class="result-content"><div class="result-id">'+(r.url||'')+'</div><div style="font-size:12px;color:#6e6e73">'+r.error+'</div></div></div>';
+    }
+  });
+  stats.innerHTML='<div class="stats-grid"><div class="stat-item"><div class="stat-value">'+ok+'</div><div class="stat-label">✅ 成功</div></div><div class="stat-item"><div class="stat-value">'+fail+'</div><div class="stat-label">❌ 失败</div></div><div class="stat-item"><div class="stat-value">'+results.length+'</div><div class="stat-label">📊 总计</div></div></div>';
+}
 
 // ==== TAB2: 提取笔记信息 ====
 var _results=[];
@@ -319,23 +333,32 @@ function run(){
   if(hasShort){
     var serverUrl=window.location.origin;
     if(window.location.port!=='5001'&&localStorage.getItem('xhs_server'))serverUrl=localStorage.getItem('xhs_server');
+    // 尝试Flask服务
     fetch(serverUrl+'/api/resolve_url',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({urls:items})})
     .then(function(r){return r.json()}).then(function(res){
-      if(res.results){
-        var resolved=[];
-        res.results.forEach(function(r){
-          if(r.ok){
-            resolved.push({token:r.token,src:r.url,id:r.id,isShort:false});
-            list.innerHTML+='<div class="result-item ok"><div>✅</div><div class="result-content"><div class="result-id">'+r.id+'</div><div id="rd_'+resolved.length+'" style="font-size:12px;color:var(--text2)">✅ 已解析</div></div></div>';
+      if(res.results){showResolveResults(res.results);}
+    }).catch(function(){
+      // Flask不可达，用CORS代理直接解析短链接
+      var pending=items.length,results=[];
+      items.forEach(function(url,i){
+        var proxyUrl='https://api.codetabs.com/v1/proxy?quest='+encodeURIComponent(url);
+        fetch(proxyUrl).then(function(r){return r.text()}).then(function(html){
+          pending--;
+          // 从页面内容提取重定向URL或笔记ID
+          var m=html.match(/explore\/([a-f0-9]{24})/i)||html.match(/discovery\/item\/([a-f0-9]{24})/i);
+          if(m){
+            var mt=html.match(/xsec_token=([^&"]+)/);
+            results.push({ok:true,id:m[1],token:mt?mt[1]:'',url:url});
           }else{
-            list.innerHTML+='<div class="result-item err"><div>❌</div><div class="result-content"><div class="result-id">'+r.url+'</div><div style="font-size:12px;color:var(--text2)">'+r.error+'</div></div></div>';
+            results.push({ok:false,id:'',token:'',url:url,error:'无法提取笔记ID'});
           }
+          if(pending<=0)showResolveResults(results);
+        }).catch(function(){pending--;
+          results.push({ok:false,id:'',token:'',url:url,error:'请求失败'});
+          if(pending<=0)showResolveResults(results);
         });
-        _results=resolved;
-        var ok=resolved.length;
-        stats.innerHTML='<div class="stats-grid"><div class="stat-item"><div class="stat-value">'+ok+'</div><div class="stat-label">✅ 成功</div></div><div class="stat-item"><div class="stat-value">'+(res.results.length-ok)+'</div><div class="stat-label">❌ 失败</div></div><div class="stat-item"><div class="stat-value">'+res.results.length+'</div><div class="stat-label">📊 总计</div></div></div>';
-      }
-    }).catch(function(e){alert('短链接解析失败: '+e.message);});
+      });
+    });
   }else{
     items.forEach(function(s){
       var p=parse(s);
