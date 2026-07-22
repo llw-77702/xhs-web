@@ -1,0 +1,17 @@
+services:
+  - type: web
+    name: xhs-web
+    env: python
+    buildCommand: pip install flask httpx pymysql gunicorn
+    startCommand: gunicorn app:app --bind 0.0.0.0:$PORT
+    envVars:
+      - key: DB_HOST
+        value: 47.112.119.104
+      - key: DB_PORT
+        value: "3306"
+      - key: DB_USER
+        value: szcrm
+      - key: DB_PASS
+        value: sq3685#&^73
+      - key: DB_NAME
+        value: hz_crm
