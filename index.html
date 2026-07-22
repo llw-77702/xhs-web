@@ -76,7 +76,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Inter','Segoe UI',sans-serif;
 <div id="sub1">
 <textarea class="textarea" id="idInput" rows="5" placeholder="粘贴笔记ID，多个用逗号或换行分隔&#10;69fd8382000000003701f115, 69e4612b000000002200c8f5"></textarea>
 <div id="cookieSection" class="hidden" style="margin-top:8px">
-<div style="font-size:12px;color:var(--text2);margin-bottom:4px">🔑 粘贴Cookie：</div>
+<div style="font-size:12px;color:var(--text2);margin-bottom:4px">🔑 粘贴Cookie + 输入Flask地址：</div>
+<input id="serverUrlInput" type="text" style="width:100%;padding:8px;border:1.5px solid var(--border);border-radius:8px;font-size:12px;font-family:monospace;margin-bottom:6px" placeholder="Flask服务地址（同一WiFi下输入 http://10.1.11.51:5001）" value="http://10.1.11.51:5001">
 <textarea id="remoteCookie" rows="2" style="width:100%;padding:8px;border:1.5px solid var(--border);border-radius:8px;font-size:12px;font-family:monospace;resize:vertical" placeholder="从 ad.xiaohongshu.com 复制 Cookie 粘贴到这里"></textarea>
 </div>
 <div class="actions">
@@ -161,247 +162,326 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Inter','Segoe UI',sans-serif;
 
 <script>
 
-
-
-
 function switchTab(n,el){
-document.querySelectorAll('.tab').forEach(function(t){t.classList.remove('active')});el.classList.add('active')
-document.getElementById('tab1').classList.toggle('active',n===1);document.getElementById('tab2').classList.toggle('active',n===2)
-document.getElementById('idResultCard').style.display='none';document.getElementById('resultCard2').style.display='none'
+  document.querySelectorAll('.tab').forEach(function(t){t.classList.remove('active')});
+  el.classList.add('active');
+  document.getElementById('tab1').classList.toggle('active',n===1);
+  document.getElementById('tab2').classList.toggle('active',n===2);
+  document.getElementById('idResultCard').style.display='none';
+  document.getElementById('resultCard2').style.display='none';
 }
 
 function st(n,el){
-el.parentElement.querySelectorAll('.st').forEach(function(t){t.classList.remove('active')});el.classList.add('active')
+  el.parentElement.querySelectorAll('.st').forEach(function(t){t.classList.remove('active')});
+  el.classList.add('active');
 }
 
-document.getElementById('idInput').addEventListener('input',function(){document.getElementById('idCount').textContent='已输入 '+this.value.split(/[,\n]+/).filter(function(x){return x.trim()}).length+' 个ID'})
-document.getElementById('input').addEventListener('input',function(){document.getElementById('count').textContent='已输入 '+this.value.split(/[,\n]+/).filter(function(x){return x.trim()}).length+' 条'})
+document.getElementById('idInput').addEventListener('input',function(){
+  document.getElementById('idCount').textContent='已输入 '+this.value.split(/[,\n]+/).filter(function(x){return x.trim()}).length+' 个ID';
+});
+document.getElementById('input').addEventListener('input',function(){
+  document.getElementById('count').textContent='已输入 '+this.value.split(/[,\n]+/).filter(function(x){return x.trim()}).length+' 条';
+});
 
 // ==== 通用文件导入（自动过滤表头行）====
 function readFile(file,cb){
-var ext=file.name.split('.').pop().toLowerCase();
-function filterIds(arr){
-return arr.filter(function(v){
-var s=v.toString().trim()
-// 过滤表头文字
-if(/[一-鿿]/.test(s))return false  // 含中文的跳过
-if(s.length<6)return false                  // 太短的跳过
-if(!s.startsWith('http')&&!/^[a-f0-9]{20,}$/i.test(s))return false  // 不是链接也不是ID就跳过
-return true
-})}
-if(ext==='xlsx'){
-var r=new FileReader();r.onload=function(e){
-var d=new Uint8Array(e.target.result),wb=XLSX.read(d,{type:'array'}),ws=wb.Sheets[wb.SheetNames[0]],a=XLSX.utils.sheet_to_json(ws,{header:1})
-var ids=[];a.forEach(function(r){r.forEach(function(c){if(c&&c.toString().trim())ids.push(c.toString().trim())})});cb(filterIds(ids))}
-r.readAsArrayBuffer(file)
-}else{var r=new FileReader();r.onload=function(e){var ids=e.target.result.split(/[,\n]+/).map(function(x){return x.trim()}).filter(Boolean);cb(filterIds(ids))};r.readAsText(file)}
+  var ext=file.name.split('.').pop().toLowerCase();
+  function filterIds(arr){
+    return arr.filter(function(v){
+      var s=v.toString().trim();
+      if(/[一-鿿]/.test(s))return false;
+      if(s.length<6)return false;
+      if(!s.startsWith('http')&&!/^[a-f0-9]{20,}$/i.test(s))return false;
+      return true;
+    });
+  }
+  if(ext==='xlsx'){
+    var r=new FileReader();r.onload=function(e){
+      var d=new Uint8Array(e.target.result),wb=XLSX.read(d,{type:'array'}),ws=wb.Sheets[wb.SheetNames[0]],a=XLSX.utils.sheet_to_json(ws,{header:1});
+      var ids=[];a.forEach(function(r){r.forEach(function(c){if(c&&c.toString().trim())ids.push(c.toString().trim())});});
+      cb(filterIds(ids));
+    };
+    r.readAsArrayBuffer(file);
+  }else{
+    var r=new FileReader();r.onload=function(e){
+      var ids=e.target.result.split(/[,\n]+/).map(function(x){return x.trim()}).filter(Boolean);
+      cb(filterIds(ids));
+    };
+    r.readAsText(file);
+  }
 }
 
 document.getElementById('fileInput').addEventListener('change',function(e){
-var f=e.target.files[0];if(!f)return;readFile(f,function(ids){if(!ids.length)return alert('文件为空')
-document.getElementById('input').value=ids.join('\n');document.getElementById('count').textContent='已输入 '+ids.length+' 条';alert('✅ 导入 '+ids.length+' 条')})})
+  var f=e.target.files[0];if(!f)return;
+  readFile(f,function(ids){
+    if(!ids.length)return alert('文件为空');
+    document.getElementById('input').value=ids.join('\n');
+    document.getElementById('count').textContent='已输入 '+ids.length+' 条';
+    alert('✅ 导入 '+ids.length+' 条');
+  });
+});
 
 // 检测本地服务
 function checkServer(){
-// 检测是否在 Flask 服务上（任意IP的5001端口都算）
-if(window.location.port==='5001'||window.location.hostname==='localhost'||window.location.hostname==='127.0.0.1'){
-testServer(window.location.origin);return}
-// 尝试连 localhost:5001（GitHub Pages 上检测）
-fetch('http://localhost:5001/',{mode:'no-cors'}).then(function(){testServer('http://localhost:5001')
-}).catch(function(){enableLocal(false)})}
-function testServer(url){
-// 测试Cookie是否有效
-fetch(url+'/api/convert',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({noteIds:['test']})})
-.then(function(r){return r.json()}).then(function(res){
-if(res.error==='COOKIE_EXPIRED'){
-enableLocal(false,'Cookie 已过期，请重新输入')
-localStorage.removeItem('xhs_server')
-}else{
-enableLocal(true,url)
-localStorage.setItem('xhs_server',url);SERVER=url
+  if(window.location.port==='5001'||window.location.hostname==='localhost'||window.location.hostname==='127.0.0.1'){
+    testServer(window.location.origin);return;
+  }
+  fetch('http://localhost:5001/',{mode:'no-cors'}).then(function(){
+    testServer('http://localhost:5001');
+  }).catch(function(){
+    enableLocal(false);
+  });
 }
-}).catch(function(){enableLocal(true,url);localStorage.setItem('xhs_server',url);SERVER=url})}
+
+function testServer(url){
+  fetch(url+'/api/convert',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({noteIds:['test']})})
+  .then(function(r){return r.json()}).then(function(res){
+    if(res.error==='COOKIE_EXPIRED'){
+      enableLocal(false,'Cookie 已过期，请重新输入');
+      localStorage.removeItem('xhs_server');
+    }else{
+      enableLocal(true,url);
+      localStorage.setItem('xhs_server',url);SERVER=url;
+    }
+  }).catch(function(){
+    enableLocal(true,url);localStorage.setItem('xhs_server',url);SERVER=url;
+  });
+}
+
 function enableLocal(ok,msg){
-var btn=document.querySelector('#sub1 .btn-primary')
-var info=document.querySelector('#sub1 .info')
-var cookieSec=document.getElementById('cookieSection')
-if(!btn||!info)return
-if(ok){
-btn.disabled=false;btn.style.opacity='1';btn.textContent='🔄 批量转换'
-info.innerHTML='🟢 服务已连接，Cookie 有效 ✅'
-cookieSec.classList.add('hidden')
-}else{
-btn.disabled=false;btn.style.opacity='1';btn.textContent='🔄 批量转换'
-info.innerHTML='🔴 '+(msg||'服务未连接，请填写下方 Cookie')
-cookieSec.classList.remove('hidden')
-}}
-checkServer()
+  var btn=document.querySelector('#sub1 .btn-primary');
+  var info=document.querySelector('#sub1 .info');
+  var cookieSec=document.getElementById('cookieSection');
+  if(!btn||!info)return;
+  if(ok){
+    btn.disabled=false;btn.style.opacity='1';btn.textContent='🔄 批量转换';
+    info.innerHTML='🟢 服务已连接，Cookie 有效 ✅';
+    cookieSec.classList.add('hidden');
+  }else{
+    btn.disabled=false;btn.style.opacity='1';btn.textContent='🔄 批量转换';
+    info.innerHTML='🔴 '+(msg||'服务未连接，请填写下方 Cookie');
+    cookieSec.classList.remove('hidden');
+  }
+}
+checkServer();
 
 document.getElementById('idFileInput').addEventListener('change',function(e){
-var f=e.target.files[0];if(!f)return;readFile(f,function(ids){if(!ids.length)return alert('文件为空')
-document.getElementById('idInput').value=ids.join('\n');document.getElementById('idCount').textContent='已输入 '+ids.length+' 个ID';alert('✅ 导入 '+ids.length+' 个ID')})})
+  var f=e.target.files[0];if(!f)return;
+  readFile(f,function(ids){
+    if(!ids.length)return alert('文件为空');
+    document.getElementById('idInput').value=ids.join('\n');
+    document.getElementById('idCount').textContent='已输入 '+ids.length+' 个ID';
+    alert('✅ 导入 '+ids.length+' 个ID');
+  });
+});
 
 // ==== 下载上传模版 ====
 function dlIdTemplate(){
-var wb=XLSX.utils.book_new()
-XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet([['笔记ID'],['6a5740c000000000702dbd2'],['6a59db39000000001101e9a6'],['6a59f994000000001302f5ef']]),'笔记ID')
-XLSX.writeFile(wb,'xhs_ids_template.xlsx')}
+  var wb=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet([['笔记ID'],['6a5740c000000000702dbd2'],['6a59db39000000001101e9a6'],['6a59f994000000001302f5ef']]),'笔记ID');
+  XLSX.writeFile(wb,'xhs_ids_template.xlsx');
+}
+
 function dlTemplate(){
-var wb=XLSX.utils.book_new()
-XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet([['链接'],['https://www.xiaohongshu.com/explore/69fd8382000000003701f115?xsec_token=xxx'],['https://www.xiaohongshu.com/explore/69e4612b000000002200c8f5?xsec_token=xxx']]),'链接')
-XLSX.writeFile(wb,'xhs_links_template.xlsx')}
+  var wb=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet([['链接'],['https://www.xiaohongshu.com/explore/69fd8382000000003701f115?xsec_token=xxx'],['https://www.xiaohongshu.com/explore/69e4612b000000002200c8f5?xsec_token=xxx']]),'链接');
+  XLSX.writeFile(wb,'xhs_links_template.xlsx');
+}
 
 // ==== URL解析 ====
 function parse(s){
-var id=null,t='';var m=s.match(/explore\/([a-f0-9]{24})/i);if(!m)m=s.match(/discovery\/item\/([a-f0-9]{24})/i)
-if(!m&&/^[a-f0-9]{24}$/i.test(s.trim()))id=s.trim()
-if(m)id=m[1];if(!id&&/xhslink\.com|s\.xiaohongshu|t\.cn/i.test(s)){return{id:null,token:null,shortUrl:s,isShort:true}}
-if(!id)return null
-var mt=s.match(/xsec_token=([^&]+)/);if(mt)t=mt[1]
-return{id:id,token:t,isShort:false}}
+  var id=null,t='';
+  var m=s.match(/explore\/([a-f0-9]{24})/i);
+  if(!m)m=s.match(/discovery\/item\/([a-f0-9]{24})/i);
+  if(!m&&/^[a-f0-9]{24}$/i.test(s.trim()))id=s.trim();
+  if(m)id=m[1];
+  if(!id&&/xhslink\.com|s\.xiaohongshu|t\.cn/i.test(s)){return{id:null,token:null,shortUrl:s,isShort:true};}
+  if(!id)return null;
+  var mt=s.match(/xsec_token=([^&]+)/);if(mt)t=mt[1];
+  return{id:id,token:t,isShort:false};
+}
 
-function fmtTime(t){if(!t)return'未知';if(typeof t=='string'&&t.includes('-'))return t;var d=new Date(t);if(isNaN(d.getTime()))return t;return d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate()+' '+d.getHours()+':'+d.getMinutes()}
+function fmtTime(t){
+  if(!t)return'未知';
+  if(typeof t=='string'&&t.includes('-'))return t;
+  var d=new Date(t);if(isNaN(d.getTime()))return t;
+  return d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate()+' '+d.getHours()+':'+d.getMinutes();
+}
 
 // ==== TAB2: 提取笔记信息 ====
-var _results=[]
+var _results=[];
 function run(){
-var raw=document.getElementById('input').value,items=raw.split(/[,\n]+/).map(function(x){return x.trim()}).filter(Boolean)
-if(!items.length)return alert('请输入链接')
-_results=[];var list=document.getElementById('resultList2'),card=document.getElementById('resultCard2'),stats=document.getElementById('statsCard2')
-list.innerHTML='';card.style.display='';stats.innerHTML=''
-// 检测短链接
-var hasShort=items.some(function(s){return /xhslink\.com|s\.xiaohongshu|t\.cn/i.test(s)&&!/explore\//.test(s)})
-if(hasShort){
-// 通过后端解析短链接
-var serverUrl=window.location.origin
-if(window.location.port!=='5001'&&localStorage.getItem('xhs_server'))serverUrl=localStorage.getItem('xhs_server')
-fetch(serverUrl+'/api/resolve_url',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({urls:items})})
-.then(function(r){return r.json()}).then(function(res){
-if(res.results){
-var resolved=[]
-res.results.forEach(function(r){
-if(r.ok){resolved.push({token:r.token,src:r.url,id:r.id,isShort:false})
-list.innerHTML+='<div class="result-item ok"><div>✅</div><div class="result-content"><div class="result-id">'+r.id+'</div><div id="rd_'+resolved.length+'" style="font-size:12px;color:var(--text2)">✅ 已解析</div></div></div>'}
-else{list.innerHTML+='<div class="result-item err"><div>❌</div><div class="result-content"><div class="result-id">'+r.url+'</div><div style="font-size:12px;color:var(--text2)">'+r.error+'</div></div></div>'}
-})
-_results=resolved
-var ok=resolved.length
-stats.innerHTML='<div class="stats-grid"><div class="stat-item"><div class="stat-value">'+ok+'</div><div class="stat-label">✅ 成功</div></div><div class="stat-item"><div class="stat-value">'+(res.results.length-ok)+'</div><div class="stat-label">❌ 失败</div></div><div class="stat-item"><div class="stat-value">'+res.results.length+'</div><div class="stat-label">📊 总计</div></div></div>'
-}}).catch(function(e){alert('短链接解析失败: '+e.message)})else{
-// 普通链接，直接解析
-items.forEach(function(s){
-var p=parse(s)
-if(!p){list.innerHTML+='<div class="result-item err"><div>❌</div><div class="result-content"><div class="result-id">无法识别</div></div></div>';return}
-var idx=_results.length;_results.push({id:p.id,src:s,nickname:'',time:''})
-var item=document.createElement('div');item.className='result-item ok'
-item.innerHTML='<div>✅</div><div class="result-content"><div class="result-id">'+p.id+'</div><div id="rd_'+idx+'" style="font-size:12px;color:var(--text2)">'+(p.token?'⏳ 加载中...':'⚠️ 无token')+'</div></div>'
-list.appendChild(item)
-if(p.token){
-var serverUrl=window.location.origin;if(window.location.port!=='5001'&&localStorage.getItem('xhs_server'))serverUrl=localStorage.getItem('xhs_server')
-fetch(serverUrl+'/api/note_info',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({noteId:p.id,xsecToken:p.token})})
-.then(function(r){return r.json()}).then(function(res){
-if(res.success&&res.data){var e=document.getElementById('rd_'+idx);if(e){e.innerHTML='👤 '+res.data.nickname+'　🕐 '+fmtTime(res.data.time);_results[idx].nickname=res.data.nickname;_results[idx].time=fmtTime(res.data.time)}}})
-.catch(function(){var e=document.getElementById('rd_'+idx);if(e)e.innerHTML='💡 需连接服务查看'}})}})
-stats.innerHTML='<div class="stats-grid"><div class="stat-item"><div class="stat-value">'+_results.length+'</div><div class="stat-label">📊 总计</div></div></div>'}
+  var raw=document.getElementById('input').value,items=raw.split(/[,\n]+/).map(function(x){return x.trim()}).filter(Boolean);
+  if(!items.length)return alert('请输入链接');
+  _results=[];var list=document.getElementById('resultList2'),card=document.getElementById('resultCard2'),stats=document.getElementById('statsCard2');
+  list.innerHTML='';card.style.display='';stats.innerHTML='';
+  var hasShort=items.some(function(s){return /xhslink\.com|s\.xiaohongshu|t\.cn/i.test(s)&&!/explore\//.test(s);});
+  if(hasShort){
+    var serverUrl=window.location.origin;
+    if(window.location.port!=='5001'&&localStorage.getItem('xhs_server'))serverUrl=localStorage.getItem('xhs_server');
+    fetch(serverUrl+'/api/resolve_url',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({urls:items})})
+    .then(function(r){return r.json()}).then(function(res){
+      if(res.results){
+        var resolved=[];
+        res.results.forEach(function(r){
+          if(r.ok){
+            resolved.push({token:r.token,src:r.url,id:r.id,isShort:false});
+            list.innerHTML+='<div class="result-item ok"><div>✅</div><div class="result-content"><div class="result-id">'+r.id+'</div><div id="rd_'+resolved.length+'" style="font-size:12px;color:var(--text2)">✅ 已解析</div></div></div>';
+          }else{
+            list.innerHTML+='<div class="result-item err"><div>❌</div><div class="result-content"><div class="result-id">'+r.url+'</div><div style="font-size:12px;color:var(--text2)">'+r.error+'</div></div></div>';
+          }
+        });
+        _results=resolved;
+        var ok=resolved.length;
+        stats.innerHTML='<div class="stats-grid"><div class="stat-item"><div class="stat-value">'+ok+'</div><div class="stat-label">✅ 成功</div></div><div class="stat-item"><div class="stat-value">'+(res.results.length-ok)+'</div><div class="stat-label">❌ 失败</div></div><div class="stat-item"><div class="stat-value">'+res.results.length+'</div><div class="stat-label">📊 总计</div></div></div>';
+      }
+    }).catch(function(e){alert('短链接解析失败: '+e.message);});
+  }else{
+    items.forEach(function(s){
+      var p=parse(s);
+      if(!p){list.innerHTML+='<div class="result-item err"><div>❌</div><div class="result-content"><div class="result-id">无法识别</div></div></div>';return;}
+      var idx=_results.length;_results.push({id:p.id,src:s,nickname:'',time:''});
+      var item=document.createElement('div');item.className='result-item ok';
+      item.innerHTML='<div>✅</div><div class="result-content"><div class="result-id">'+p.id+'</div><div id="rd_'+idx+'" style="font-size:12px;color:var(--text2)">'+(p.token?'⏳ 加载中...':'⚠️ 无token')+'</div></div>';
+      list.appendChild(item);
+      if(p.token){
+        var serverUrl=window.location.origin;
+        if(window.location.port!=='5001'&&localStorage.getItem('xhs_server'))serverUrl=localStorage.getItem('xhs_server');
+        fetch(serverUrl+'/api/note_info',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({noteId:p.id,xsecToken:p.token})})
+        .then(function(r){return r.json()}).then(function(res){
+          if(res.success&&res.data){
+            var e=document.getElementById('rd_'+idx);if(e){e.innerHTML='👤 '+res.data.nickname+'　🕐 '+fmtTime(res.data.time);_results[idx].nickname=res.data.nickname;_results[idx].time=fmtTime(res.data.time);}
+          }
+        }).catch(function(){var e=document.getElementById('rd_'+idx);if(e)e.innerHTML='💡 需连接服务查看';});
+      }
+    });
+    stats.innerHTML='<div class="stats-grid"><div class="stat-item"><div class="stat-value">'+_results.length+'</div><div class="stat-label">📊 总计</div></div></div>';
+  }
 }
 
-window.copyAllIds=function(){var ids=_results.map(function(r){return r.id}).join('\n');if(!ids)return alert('无结果')
-var ta=document.createElement('textarea');ta.value=ids;document.body.appendChild(ta);ta.select();document.execCommand('copy');document.body.removeChild(ta);alert('✅ 已复制 '+_results.length+' 个ID')}
+window.copyAllIds=function(){
+  var ids=_results.map(function(r){return r.id}).join('\n');
+  if(!ids)return alert('无结果');
+  var ta=document.createElement('textarea');ta.value=ids;document.body.appendChild(ta);ta.select();document.execCommand('copy');document.body.removeChild(ta);
+  alert('✅ 已复制 '+_results.length+' 个ID');
+};
 
-window.exportResults=function(){if(!_results.length)return alert('无结果')
-var data=[['笔记ID','达人名称','发布时间','来源链接']];_results.forEach(function(r){data.push([r.id||'',r.nickname||'',r.time||'',r.src||''])})
-var wb=XLSX.utils.book_new();var ws=XLSX.utils.aoa_to_sheet(data);XLSX.utils.book_append_sheet(wb,ws,'结果')
-XLSX.writeFile(wb,'xhs_results_'+Date.now()+'.xlsx');alert('✅ 已导出 '+_results.length+' 条结果到Excel')}
+window.exportResults=function(){
+  if(!_results.length)return alert('无结果');
+  var data=[['笔记ID','达人名称','发布时间','来源链接']];_results.forEach(function(r){data.push([r.id||'',r.nickname||'',r.time||'',r.src||''])});
+  var wb=XLSX.utils.book_new();var ws=XLSX.utils.aoa_to_sheet(data);XLSX.utils.book_append_sheet(wb,ws,'结果');
+  XLSX.writeFile(wb,'xhs_results_'+Date.now()+'.xlsx');alert('✅ 已导出 '+_results.length+' 条结果到Excel');
+};
 
 // ==== TAB1: ID→链接批量转换 ====
-var _idResults=[],SERVER=localStorage.getItem('xhs_server')||''
+var _idResults=[],SERVER=localStorage.getItem('xhs_server')||'';
 
 function batchConvert(){
-var raw=document.getElementById('idInput').value,ids=raw.split(/[,\n]+/).map(function(x){return x.trim()}).filter(Boolean)
-if(!ids.length)return alert('请输入笔记ID')
-var list=document.getElementById('idResultList'),card=document.getElementById('idResultCard'),stats=document.getElementById('idStatsCard')
-_idResults=[];list.innerHTML='';card.style.display='';stats.innerHTML=''
-// 本地模式 or 远程Cookie模式
-var isLocal=!!localStorage.getItem('xhs_server')
-var cookie=isLocal?'':document.getElementById('remoteCookie').value.trim()
-if(!isLocal&&(!cookie||!cookie.includes('ares.beaker.session.id')))return alert('❌ 请先在下方输入Cookie')
-localStorage.setItem('xhs_cookie',cookie||'')
-var done=0,total=ids.length,api=isLocal?'/api/convert':'/api/convert_with_cookie'
-ids.forEach(function(id){
-var body=isLocal?JSON.stringify({noteIds:id}):JSON.stringify({noteIds:id,cookie:cookie})
-fetch((isLocal?SERVER:window.location.origin)+api,{method:'POST',headers:{'Content-Type':'application/json'},body:body})
-.then(function(r){return r.json()}).then(function(res){
-done++
-if(res.success&&res.results){res.results.forEach(function(r){
-if(r.success){_idResults.push({id:r.id,url:r.url})
-list.innerHTML+='<div class=\"result-item ok\"><div>✅</div><div class=\"result-content\"><div class=\"result-id\">'+r.id+'</div><div class=\"result-url\"><a href=\"'+r.url+'\" target=\"_blank\">'+r.url+'</a></div></div></div>'}
-else{list.innerHTML+='<div class=\"result-item err\"><div>❌</div><div class=\"result-content\"><div class=\"result-id\">'+r.id+'</div><div class=\"result-url\">获取失败</div></div></div>'}})}
-else{list.innerHTML+='<div class=\"result-item err\"><div>❌</div><div class=\"result-content\"><div class=\"result-id\">错误</div><div class=\"result-url\">'+(res.error||'请求失败')+'</div></div></div>'}
-}).catch(function(e){done++
-list.innerHTML+='<div class=\"result-item err\"><div>❌</div><div class=\"result-content\"><div class=\"result-id\">请求失败</div><div class=\"result-url\">'+e.message+'</div></div></div>'
-}).then(function(){
-if(done>=total){var ok=_idResults.length;stats.innerHTML='<div class=\"stats-grid\"><div class=\"stat-item\"><div class=\"stat-value\">'+ok+'</div><div class=\"stat-label\">✅成功</div></div><div class=\"stat-item\"><div class=\"stat-value\">'+(total-ok)+'</div><div class=\"stat-label\">❌失败</div></div><div class=\"stat-item\"><div class=\"stat-value\">'+total+'</div><div class=\"stat-label\">📊总计</div></div></div>'}}
-)})
+  var raw=document.getElementById('idInput').value,ids=raw.split(/[,\n]+/).map(function(x){return x.trim()}).filter(Boolean);
+  if(!ids.length)return alert('请输入笔记ID');
+  var list=document.getElementById('idResultList'),card=document.getElementById('idResultCard'),stats=document.getElementById('idStatsCard');
+  _idResults=[];list.innerHTML='';card.style.display='';stats.innerHTML='';
+  var isLocal=!!localStorage.getItem('xhs_server');
+  var cookie=isLocal?'':document.getElementById('remoteCookie').value.trim();
+  if(!isLocal&&(!cookie||!cookie.includes('ares.beaker.session.id')))return alert('❌ 请先在下方输入Cookie');
+  localStorage.setItem('xhs_cookie',cookie||'');
+  var done=0,total=ids.length,api=isLocal?'/api/convert':'/api/convert_with_cookie';
+  // Determine target URL
+  var targetUrl=isLocal?SERVER:document.getElementById('serverUrlInput').value.trim()||'http://10.1.11.51:5001';
+  ids.forEach(function(id){
+    var body=isLocal?JSON.stringify({noteIds:id}):JSON.stringify({noteIds:id,cookie:cookie});
+    fetch(targetUrl+api,{method:'POST',headers:{'Content-Type':'application/json'},body:body})
+    .then(function(r){return r.json()}).then(function(res){
+      done++;
+      if(res.success&&res.results){
+        res.results.forEach(function(r){
+          if(r.success){
+            _idResults.push({id:r.id,url:r.url});
+            list.innerHTML+='<div class="result-item ok"><div>✅</div><div class="result-content"><div class="result-id">'+r.id+'</div><div class="result-url"><a href="'+r.url+'" target="_blank">'+r.url+'</a></div></div></div>';
+          }else{
+            list.innerHTML+='<div class="result-item err"><div>❌</div><div class="result-content"><div class="result-id">'+r.id+'</div><div class="result-url">获取失败</div></div></div>';
+          }
+        });
+      }else{
+        list.innerHTML+='<div class="result-item err"><div>❌</div><div class="result-content"><div class="result-id">错误</div><div class="result-url">'+(res.error||'请求失败')+'</div></div></div>';
+      }
+    }).catch(function(e){
+      done++;
+      list.innerHTML+='<div class="result-item err"><div>❌</div><div class="result-content"><div class="result-id">请求失败</div><div class="result-url">'+e.message+'</div></div></div>';
+    }).then(function(){
+      if(done>=total){
+        var ok=_idResults.length;
+        stats.innerHTML='<div class="stats-grid"><div class="stat-item"><div class="stat-value">'+ok+'</div><div class="stat-label">✅成功</div></div><div class="stat-item"><div class="stat-value">'+(total-ok)+'</div><div class="stat-label">❌失败</div></div><div class="stat-item"><div class="stat-value">'+total+'</div><div class="stat-label">📊总计</div></div></div>';
+      }
+    });
+  });
 }
 
-window.copyIdUrls=function(){var urls=_idResults.map(function(r){return r.url}).join('\n');if(!urls)return alert('无结果')
-var ta=document.createElement('textarea');ta.value=urls;document.body.appendChild(ta);ta.select();document.execCommand('copy');document.body.removeChild(ta);alert('✅ 已复制 '+_idResults.length+' 个链接')}
+window.copyIdUrls=function(){
+  var urls=_idResults.map(function(r){return r.url}).join('\n');
+  if(!urls)return alert('无结果');
+  var ta=document.createElement('textarea');ta.value=urls;document.body.appendChild(ta);ta.select();document.execCommand('copy');document.body.removeChild(ta);
+  alert('✅ 已复制 '+_idResults.length+' 个链接');
+};
 
-window.exportIdResults=function(){if(!_idResults.length)return alert('无结果')
-var data=[['笔记ID','分享链接']];_idResults.forEach(function(r){data.push([r.id,r.url])})
-var wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(data),'链接')
-XLSX.writeFile(wb,'xhs_links_'+Date.now()+'.xlsx');alert('✅ 已导出 '+_idResults.length+' 条链接到Excel')}
+window.exportIdResults=function(){
+  if(!_idResults.length)return alert('无结果');
+  var data=[['笔记ID','分享链接']];_idResults.forEach(function(r){data.push([r.id,r.url])});
+  var wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(data),'链接');
+  XLSX.writeFile(wb,'xhs_links_'+Date.now()+'.xlsx');alert('✅ 已导出 '+_idResults.length+' 条链接到Excel');
+};
 
 // ========== Cookie转换 (sub2) ==========
 
 // ========== Cookie管理 ==========
-var savedCookie=localStorage.getItem('xhs_cookie')||''
-document.getElementById('cookieInput').value=savedCookie
+var savedCookie=localStorage.getItem('xhs_cookie')||'';
+document.getElementById('cookieInput').value=savedCookie;
 
-function openCookieModal(){document.getElementById('cookieModal').style.display='flex';checkCookie()}
-function closeCookieModal(){document.getElementById('cookieModal').style.display='none'}
+function openCookieModal(){document.getElementById('cookieModal').style.display='flex';checkCookie();}
+function closeCookieModal(){document.getElementById('cookieModal').style.display='none';}
 
 function saveCookie(){
-var cookie=document.getElementById('cookieInput').value.trim()
-if(!cookie||!cookie.includes('ares.beaker.session.id'))return alert('❌ Cookie 格式不正确，需要包含 ares.beaker.session.id')
-localStorage.setItem('xhs_cookie',cookie)
-savedCookie=cookie
-// 同时保存到服务器数据库
-fetch(window.location.origin+'/api/manual_cookie',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({cookie:cookie})})
-.then(function(r){return r.json()}).then(function(res){
-if(res.success){console.log('Cookie synced to server')}
-else{console.warn('Server sync failed:',res.error)}
-}).catch(function(){console.warn('Server not reachable, cookie saved locally only')})
-alert('✅ Cookie 已保存')
-checkCookie()
-closeCookieModal()
+  var cookie=document.getElementById('cookieInput').value.trim();
+  if(!cookie||!cookie.includes('ares.beaker.session.id'))return alert('❌ Cookie 格式不正确，需要包含 ares.beaker.session.id');
+  localStorage.setItem('xhs_cookie',cookie);
+  savedCookie=cookie;
+  fetch(window.location.origin+'/api/manual_cookie',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({cookie:cookie})})
+  .then(function(r){return r.json()}).then(function(res){
+    if(res.success){console.log('Cookie synced to server');}
+    else{console.warn('Server sync failed:',res.error);}
+  }).catch(function(){console.warn('Server not reachable, cookie saved locally only');});
+  alert('✅ Cookie 已保存');
+  checkCookie();
+  closeCookieModal();
 }
 
 function checkCookie(){
-var el=document.getElementById('modalCookieStatus')
-if(!el)return
-if(savedCookie&&savedCookie.includes('ares.beaker.session.id')){
-el.innerHTML='✅ Cookie 已保存'
-el.style.color='#27ae60'
-}else{
-el.innerHTML='❌ 未设置 Cookie'
-el.style.color='#e74c3c'
-}
-setCookieStatus()
+  var el=document.getElementById('modalCookieStatus');
+  if(!el)return;
+  if(savedCookie&&savedCookie.includes('ares.beaker.session.id')){
+    el.innerHTML='✅ Cookie 已保存';
+    el.style.color='#27ae60';
+  }else{
+    el.innerHTML='❌ 未设置 Cookie';
+    el.style.color='#e74c3c';
+  }
+  setCookieStatus();
 }
 
 function setCookieStatus(){
-var dot=document.getElementById('cookieDot'),status=document.getElementById('cookieStatus')
-if(!dot||!status)return
-if(savedCookie&&savedCookie.includes('ares.beaker.session.id')){
-dot.style.background='#34c759'
-status.innerHTML='<span id="cookieDot" style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#34c759"></span> Cookie 已设置'
-}else{
-dot.style.background='#ff3b30'
-status.innerHTML='<span id="cookieDot" style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#ff3b30"></span> 未设置 Cookie'
-}}
+  var dot=document.getElementById('cookieDot'),status=document.getElementById('cookieStatus');
+  if(!dot||!status)return;
+  if(savedCookie&&savedCookie.includes('ares.beaker.session.id')){
+    dot.style.background='#34c759';
+    status.innerHTML='<span id="cookieDot" style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#34c759"></span> Cookie 已设置';
+  }else{
+    dot.style.background='#ff3b30';
+    status.innerHTML='<span id="cookieDot" style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#ff3b30"></span> 未设置 Cookie';
+  }
+}
 
 // 初始化 Cookie 状态
-setCookieStatus()</script>
+setCookieStatus();
+</script>
 </body>
 </html>
