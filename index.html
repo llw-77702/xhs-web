@@ -287,7 +287,7 @@ else{list.innerHTML+='<div class="result-item err"><div>❌</div><div class="res
 _results=resolved
 var ok=resolved.length
 stats.innerHTML='<div class="stats-grid"><div class="stat-item"><div class="stat-value">'+ok+'</div><div class="stat-label">✅ 成功</div></div><div class="stat-item"><div class="stat-value">'+(res.results.length-ok)+'</div><div class="stat-label">❌ 失败</div></div><div class="stat-item"><div class="stat-value">'+res.results.length+'</div><div class="stat-label">📊 总计</div></div></div>'
-}}).catch(function(e){alert('短链接解析失败: '+e.message)})}else{
+}}).catch(function(e){alert('短链接解析失败: '+e.message)})else{
 // 普通链接，直接解析
 items.forEach(function(s){
 var p=parse(s)
